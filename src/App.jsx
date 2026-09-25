@@ -23,6 +23,7 @@ const ICONS = {
   trash: <><path d="M3.5 6h17" /><path d="M8 6V4h8v2" /><path d="M18.5 6 17.6 20H6.4L5.5 6" /><line x1="10" y1="10" x2="10" y2="16" /><line x1="14" y1="10" x2="14" y2="16" /></>,
   download: <><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></>,
   eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.6" /></>,
+  eyeOff: <><path d="M3 3l18 18" /><path d="M10.6 10.6A2 2 0 0 0 13.4 13.4" /><path d="M9.9 5.2A10.9 10.9 0 0 1 12 5c6 0 9.5 7 9.5 7a17.6 17.6 0 0 1-3.1 4.1" /><path d="M6.2 6.3C3.7 8 2.5 12 2.5 12S6 19 12 19c1.2 0 2.3-.2 3.3-.5" /></>,
   chevronDown: <path d="M6 9l6 6 6-6" />,
   check: <><path d="M5 12.5 9.5 17 19 7.5" /></>,
   alert: <><circle cx="12" cy="12" r="9" /><line x1="12" y1="7.5" x2="12" y2="13" /><circle cx="12" cy="16.5" r="0.9" fill="currentColor" stroke="none" /></>,
@@ -242,52 +243,6 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
    ========================================================= */
 const CHART_COLORS = ['#214A91', '#6E88B6', '#E3AD42', '#C96B61', '#C7D1DE'];
 
-
-/* =========================================================
-   DEMO DATA - safe to remove later
-   Set DEMO_DATA_ENABLED = false to start completely empty.
-   ========================================================= */
-const DEMO_DATA_ENABLED = true;
-const DEMO_PROPERTY = {
-  id: 'demo-prop-1', name: 'Sunrise Residency', type: 'House', address: '12 MG Road, Anna Nagar', city: 'Chennai', state: 'Tamil Nadu', pincode: '600040',
-  totalFloors: 2, floorNumber: '1', flatType: '3BHK', flatsCount: 1, carpetArea: 1150, builtupArea: 1350,
-  monthlyMaintenance: 2000, direction: 'East', furnished: 'Semi-Furnished', amenities: ['Parking','Garden'], landmarks: [],
-  additionalDetails: 'Demo record - remove when backend is connected', ownerName: 'R. Kannan', ownerPhone: '9884433221',
-  status: 'Occupied', rentAmount: 25000, forSale: false, listed: false, ownerDocuments: {}
-};
-const DEMO_ACTIVE_TENANT = {
-  id: 'demo-ten-1', propertyId: 'demo-prop-1', fullName: 'Rahul Sharma', phone: '9876543210', email: 'rahul@example.com',
-  dateOfComing: '2026-01-01', dateOfLeaving: '', status: 'Active', rentAmount: 25000, advanceAmount: 50000,
-  maintenanceFee: 2000, brokerageFee: 12500, documents: {}, familyMembers: [], familyCount: 1, profilePhoto: null,
-  rentHistory: [
-    {month:'April',year:2026,amount:25000,status:'Paid',paidDate:'2026-04-03',dueDate:'2026-04-05'},
-    {month:'May',year:2026,amount:25000,status:'Paid',paidDate:'2026-05-03',dueDate:'2026-05-05'},
-    {month:'June',year:2026,amount:25000,status:'Paid',paidDate:'2026-06-04',dueDate:'2026-06-05'},
-    {month:'July',year:2026,amount:25000,status:'Pending',paidDate:null,dueDate:'2026-07-05'},
-    {month:'August',year:2026,amount:25000,status:'Pending',paidDate:null,dueDate:'2026-08-05'},
-  ]
-};
-const DEMO_PREVIOUS_TENANT = {
-  id: 'demo-prev-1', propertyId: 'demo-prop-1', fullName: 'Priya Kumar', phone: '9123456780', email: 'priya@example.com',
-  dateOfComing: '2024-04-01', dateOfLeaving: '2025-03-31', status: 'Archived', rentAmount: 22000, advanceAmount: 44000,
-  maintenanceFee: 1800, brokerageFee: 11000, documents: {}, familyMembers: [], familyCount: 2, profilePhoto: null,
-  rentHistory: [
-    {month:'April',year:2024,amount:22000,status:'Paid',paidDate:'2024-04-03',dueDate:'2024-04-05'},
-    {month:'May',year:2024,amount:22000,status:'Paid',paidDate:'2024-05-03',dueDate:'2024-05-05'},
-    {month:'June',year:2024,amount:22000,status:'Paid',paidDate:'2024-06-04',dueDate:'2024-06-05'},
-    {month:'July',year:2024,amount:22000,status:'Paid',paidDate:'2024-07-03',dueDate:'2024-07-05'},
-    {month:'August',year:2024,amount:22000,status:'Paid',paidDate:'2024-08-03',dueDate:'2024-08-05'},
-    {month:'September',year:2024,amount:22000,status:'Paid',paidDate:'2024-09-03',dueDate:'2024-09-05'},
-    {month:'October',year:2024,amount:22000,status:'Paid',paidDate:'2024-10-03',dueDate:'2024-10-05'},
-    {month:'November',year:2024,amount:22000,status:'Paid',paidDate:'2024-11-04',dueDate:'2024-11-05'},
-    {month:'December',year:2024,amount:22000,status:'Paid',paidDate:'2024-12-03',dueDate:'2024-12-05'},
-    {month:'January',year:2025,amount:22000,status:'Paid',paidDate:'2025-01-03',dueDate:'2025-01-05'},
-    {month:'February',year:2025,amount:22000,status:'Paid',paidDate:'2025-02-03',dueDate:'2025-02-05'},
-    {month:'March',year:2025,amount:22000,status:'Paid',paidDate:'2025-03-03',dueDate:'2025-03-05'},
-  ]
-};
-const DEMO_BILLS = [{id:'demo-bill-1',propertyId:'demo-prop-1',month:'September',amount:1800,dueDate:'2026-09-28',status:'Pending'}];
-const DEMO_NOTIFICATIONS = [{id:'demo-notif-1',message:'Demo data loaded - previous tenant rent history is available.',type:'alert',date:new Date().toISOString(),read:false}];
 
 /* =========================================================
    SMALL UI ATOMS
@@ -1689,256 +1644,274 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
 }
 
 /* =========================================================
-   AUTHENTICATION — client flow with optional backend API hook
-   Set VITE_AUTH_API_URL to enable real server authentication.
-   Without it, the flow uses browser storage so the UI remains testable.
+   ADMIN AUTHENTICATION — FRONTEND ONLY FOR NOW
+
+   First run:
+   - Set one administrator username + strong password.
+   Later:
+   - Only the administrator login form is shown.
+   - No public signup.
+   - No forgot-password flow.
+
+   NOTE: This is a browser-side authentication gate. It is suitable for
+   the current frontend-only stage. Real strong security must move the
+   password verification to the backend/Prisma layer later.
    ========================================================= */
-const AUTH_STORAGE_KEY = 'sakthi_auth_account_v1';
-const AUTH_SESSION_KEY = 'sakthi_auth_session_v1';
-const AUTH_PENDING_KEY = 'sakthi_auth_pending_v1';
+const AUTH_STORAGE_KEY = 'sakthi_admin_auth_v2';
+const AUTH_SESSION_KEY = 'sakthi_admin_session_v2';
+const AUTH_LOCK_KEY = 'sakthi_admin_lock_v2';
+const AUTH_MAX_ATTEMPTS = 5;
+const AUTH_LOCK_MS = 60 * 1000;
+const AUTH_ITERATIONS = 120000;
 
 function readJsonStorage(storage, key, fallback = null) {
-  try { const raw = storage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
-}
-
-async function hashPassword(value) {
-  if (globalThis.crypto?.subtle) {
-    const data = new TextEncoder().encode(value);
-    const digest = await globalThis.crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  try {
+    const raw = storage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
   }
-  return btoa(unescape(encodeURIComponent(value)));
 }
 
-function getAuthApiBase() {
-  try { return import.meta.env?.VITE_AUTH_API_URL || ''; } catch { return ''; }
+function bytesToHex(bytes) {
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function authApi(path, body) {
-  const base = getAuthApiBase();
-  if (!base) return null;
-  const response = await fetch(`${base.replace(/\/$/, '')}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.message || 'Authentication request failed');
-  return payload;
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return bytes;
+}
+
+async function derivePasswordVerifier(password, saltHex) {
+  if (!globalThis.crypto?.subtle) throw new Error('Secure browser cryptography is unavailable. Please use a modern browser.');
+  const encoder = new TextEncoder();
+  const keyMaterial = await globalThis.crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const salt = hexToBytes(saltHex);
+  const bits = await globalThis.crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: AUTH_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  return bytesToHex(new Uint8Array(bits));
+}
+
+function generateSalt() {
+  if (!globalThis.crypto?.getRandomValues) throw new Error('Secure random generation is unavailable.');
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
+}
+
+function validateAdminPassword(password) {
+  if (password.length < 12) return 'Password must be at least 12 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
+  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter.';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must contain at least one special character.';
+  return '';
+}
+
+function normalizeUsername(value) {
+  return value.trim().toLowerCase();
+}
+
+function getStoredAdmin() {
+  return readJsonStorage(localStorage, AUTH_STORAGE_KEY, null);
+}
+
+function isAdminConfigured() {
+  const admin = getStoredAdmin();
+  return Boolean(admin?.username && admin?.salt && admin?.verifier);
+}
+
+function getLockState() {
+  return readJsonStorage(localStorage, AUTH_LOCK_KEY, { attempts: 0, lockedUntil: 0 });
+}
+
+function saveLockState(state) {
+  localStorage.setItem(AUTH_LOCK_KEY, JSON.stringify(state));
+}
+
+function clearLockState() {
+  localStorage.removeItem(AUTH_LOCK_KEY);
+}
+
+function getRemainingLockSeconds() {
+  const lock = getLockState();
+  return lock.lockedUntil > Date.now() ? Math.ceil((lock.lockedUntil - Date.now()) / 1000) : 0;
 }
 
 function AuthPage({ onAuthenticated }) {
-  const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ name: '', email: '', phone: '', identifier: '', otp: '', username: '', password: '', confirmPassword: '' });
+  const configured = isAdminConfigured();
+  const [mode, setMode] = useState(configured ? 'login' : 'setup');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [devOtp, setDevOtp] = useState('');
-  const [pendingMessage, setPendingMessage] = useState('');
+  const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [remainingLock, setRemainingLock] = useState(getRemainingLockSeconds());
 
-  const set = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  const localMode = !getAuthApiBase();
-  const clearMessages = () => { setError(''); setPendingMessage(''); };
+  useEffect(() => {
+    if (!remainingLock) return undefined;
+    const timer = setInterval(() => setRemainingLock(getRemainingLockSeconds()), 1000);
+    return () => clearInterval(timer);
+  }, [remainingLock]);
 
-  function generateOtp() { return String(Math.floor(100000 + Math.random() * 900000)); }
-
-  async function requestOtp(type) {
-    clearMessages();
-    setBusy(true);
-    try {
-      if (type === 'signup' && (!form.name.trim() || !form.email.trim() || !form.phone.trim())) throw new Error('Enter your name, email and phone number.');
-      if (type === 'forgot' && !form.identifier.trim()) throw new Error('Enter your email, phone or username.');
-
-      const apiResult = await authApi(type === 'signup' ? '/auth/signup/request-otp' : '/auth/forgot/request-otp', {
-        name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), identifier: form.identifier.trim()
-      });
-      if (apiResult) {
-        sessionStorage.setItem(AUTH_PENDING_KEY, JSON.stringify({ type, token: apiResult.verificationToken || null, email: form.email, phone: form.phone, identifier: form.identifier }));
-        setMode(type === 'signup' ? 'signup-otp' : 'forgot-otp');
-        setPendingMessage('OTP sent. Check the email or phone linked to the account.');
-      } else {
-        const otp = generateOtp();
-        sessionStorage.setItem(AUTH_PENDING_KEY, JSON.stringify({ type, otp, expiresAt: Date.now() + 5 * 60 * 1000, email: form.email, phone: form.phone, identifier: form.identifier }));
-        setDevOtp(otp);
-        setMode(type === 'signup' ? 'signup-otp' : 'forgot-otp');
-        setPendingMessage(`Development OTP: ${otp} — connect VITE_AUTH_API_URL for real email/SMS OTP delivery.`);
-      }
-    } catch (e) { setError(e.message || 'Unable to send OTP.'); }
-    finally { setBusy(false); }
+  function clearMessages() {
+    setError('');
+    setMessage('');
   }
 
-  async function verifyOtp(type) {
-    clearMessages();
-    setBusy(true);
-    try {
-      const pending = readJsonStorage(sessionStorage, AUTH_PENDING_KEY, null);
-      if (!pending || pending.type !== type) throw new Error('OTP session expired. Please request a new OTP.');
-      if (pending.expiresAt && Date.now() > pending.expiresAt) throw new Error('OTP expired. Please request a new OTP.');
-
-      const apiResult = await authApi(type === 'signup' ? '/auth/signup/verify-otp' : '/auth/forgot/verify-otp', { otp: form.otp, verificationToken: pending.token });
-      if (!apiResult && pending.otp !== form.otp.trim()) throw new Error('Incorrect OTP.');
-      if (apiResult?.resetToken) sessionStorage.setItem(AUTH_PENDING_KEY, JSON.stringify({ ...pending, resetToken: apiResult.resetToken }));
-      setMode(type === 'signup' ? 'setup' : 'reset');
-      setPendingMessage(type === 'signup' ? 'OTP verified. Create your username and password.' : 'OTP verified. Create your new password.');
-    } catch (e) { setError(e.message || 'OTP verification failed.'); }
-    finally { setBusy(false); }
-  }
-
-  async function finishSignup(e) {
+  async function setupAdmin(e) {
     e.preventDefault();
     clearMessages();
-    if (!form.username.trim() || form.username.trim().length < 3) return setError('Username must be at least 3 characters.');
-    if (form.password.length < 8) return setError('Password must be at least 8 characters.');
-    if (form.password !== form.confirmPassword) return setError('Passwords do not match.');
+    const cleanUsername = normalizeUsername(username);
+    if (!/^[a-z0-9._-]{4,32}$/.test(cleanUsername)) {
+      setError('Username must be 4–32 characters and use only letters, numbers, dot, underscore or hyphen.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    const passwordError = validateAdminPassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
     setBusy(true);
     try {
-      const pending = readJsonStorage(sessionStorage, AUTH_PENDING_KEY, {});
-      const passwordHash = await hashPassword(form.password);
-      const apiResult = await authApi('/auth/signup/complete', {
-        ...form, password: form.password, verificationToken: pending.token
-      });
-      if (apiResult) {
-        sessionStorage.removeItem(AUTH_PENDING_KEY);
-        sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(apiResult.user || { username: form.username, name: form.name, role: 'Administrator' }));
-        onAuthenticated(apiResult.user || { username: form.username, name: form.name, role: 'Administrator' });
-      } else {
-        const account = { id: uid(), name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), username: form.username.trim(), passwordHash, role: 'Administrator', createdAt: new Date().toISOString() };
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(account));
-        sessionStorage.removeItem(AUTH_PENDING_KEY);
-        sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(account));
-        onAuthenticated(account);
-      }
-    } catch (e) { setError(e.message || 'Unable to create account.'); }
-    finally { setBusy(false); }
+      const salt = generateSalt();
+      const verifier = await derivePasswordVerifier(password, salt);
+      const admin = {
+        username: cleanUsername,
+        salt,
+        verifier,
+        createdAt: new Date().toISOString(),
+        role: 'Administrator'
+      };
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(admin));
+      clearLockState();
+      setPassword('');
+      setConfirmPassword('');
+      setMode('login');
+      setMessage('Administrator account created. Sign in to continue.');
+    } catch (err) {
+      setError(err.message || 'Unable to create the administrator account.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function login(e) {
     e.preventDefault();
     clearMessages();
+    const lockSeconds = getRemainingLockSeconds();
+    if (lockSeconds > 0) {
+      setRemainingLock(lockSeconds);
+      setError(`Too many failed attempts. Try again in ${lockSeconds}s.`);
+      return;
+    }
+    const admin = getStoredAdmin();
+    if (!admin) {
+      setMode('setup');
+      setError('Administrator credentials are not configured.');
+      return;
+    }
+    const cleanUsername = normalizeUsername(username);
+    if (!cleanUsername || !password) {
+      setError('Enter your administrator username and password.');
+      return;
+    }
     setBusy(true);
     try {
-      if (!form.identifier.trim() || !form.password) throw new Error('Enter your username/email and password.');
-      const apiResult = await authApi('/auth/login', { identifier: form.identifier.trim(), password: form.password });
-      if (apiResult) {
-        const user = apiResult.user || { username: form.identifier.trim(), role: 'Administrator' };
-        sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user));
-        onAuthenticated(user);
-      } else {
-        const account = readJsonStorage(localStorage, AUTH_STORAGE_KEY, null);
-        if (!account) throw new Error('No account found. Please sign up first.');
-        const passwordHash = await hashPassword(form.password);
-        const match = (account.username === form.identifier.trim() || account.email === form.identifier.trim().toLowerCase() || account.phone === form.identifier.trim()) && account.passwordHash === passwordHash;
-        if (!match) throw new Error('Incorrect username/email or password.');
-        sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(account));
-        onAuthenticated(account);
+      const verifier = await derivePasswordVerifier(password, admin.salt);
+      if (cleanUsername !== admin.username || verifier !== admin.verifier) {
+        const state = getLockState();
+        const attempts = Number(state.attempts || 0) + 1;
+        if (attempts >= AUTH_MAX_ATTEMPTS) {
+          saveLockState({ attempts, lockedUntil: Date.now() + AUTH_LOCK_MS });
+          setRemainingLock(Math.ceil(AUTH_LOCK_MS / 1000));
+        } else {
+          saveLockState({ attempts, lockedUntil: 0 });
+        }
+        setPassword('');
+        setError('Invalid administrator username or password.');
+        return;
       }
-    } catch (e) { setError(e.message || 'Unable to sign in.'); }
-    finally { setBusy(false); }
+      clearLockState();
+      const session = {
+        username: admin.username,
+        role: 'Administrator',
+        loggedInAt: new Date().toISOString()
+      };
+      sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+      setPassword('');
+      onAuthenticated(session);
+    } catch (err) {
+      setError(err.message || 'Unable to sign in securely.');
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function resetPassword(e) {
-    e.preventDefault();
-    clearMessages();
-    if (form.password.length < 8) return setError('Password must be at least 8 characters.');
-    if (form.password !== form.confirmPassword) return setError('Passwords do not match.');
-    setBusy(true);
-    try {
-      const pending = readJsonStorage(sessionStorage, AUTH_PENDING_KEY, {});
-      const apiResult = await authApi('/auth/forgot/reset-password', { password: form.password, resetToken: pending.resetToken, identifier: form.identifier });
-      if (!apiResult) {
-        const account = readJsonStorage(localStorage, AUTH_STORAGE_KEY, null);
-        if (!account) throw new Error('No account exists to reset.');
-        account.passwordHash = await hashPassword(form.password);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(account));
-      }
-      sessionStorage.removeItem(AUTH_PENDING_KEY);
-      setMode('login');
-      setForm((f) => ({ ...f, otp: '', password: '', confirmPassword: '' }));
-      setPendingMessage('Password changed successfully. Sign in with your new password.');
-    } catch (e) { setError(e.message || 'Unable to reset password.'); }
-    finally { setBusy(false); }
-  }
-
-  const title = mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create your account' : mode === 'signup-otp' ? 'Verify your account' : mode === 'setup' ? 'Create login credentials' : mode === 'forgot' ? 'Reset your password' : mode === 'forgot-otp' ? 'Verify reset OTP' : 'Set a new password';
-  const subtitle = mode === 'login' ? 'Sign in to manage Sakthi Construction properties.' : mode === 'signup' ? 'Register your account to get started.' : mode === 'setup' ? 'Choose a username and secure password.' : 'Secure access for your property management workspace.';
-
+  const isSetup = mode === 'setup';
   return (
     <div className="auth-shell">
       <div className="auth-brand-panel">
         <div className="auth-brand-mark"><Icon name="home" size={28} /></div>
         <div className="auth-brand-name"><strong>SAKTHI</strong><span>CONSTRUCTION</span><small>Property &amp; Facility Management</small></div>
         <div className="auth-brand-line" />
-        <div className="auth-trust"><Icon name="shield" size={16} /><span>Secure property management</span></div>
+        <div className="auth-trust"><Icon name="shield" size={16} /><span>Administrator access only</span></div>
         <div className="auth-footer">Better Properties<br/>Brighter Future</div>
       </div>
+
       <div className="auth-content">
         <div className="auth-card">
           <div className="auth-card-head">
             <span className="auth-kicker">SAKTHI CONSTRUCTION</span>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
+            <h1>{isSetup ? 'Set administrator access' : 'Administrator login'}</h1>
+            <p>{isSetup ? 'Create the one administrator account used to access this system.' : 'Sign in to manage your property and facility workspace.'}</p>
           </div>
 
-          {mode === 'login' && (
+          {isSetup ? (
+            <form className="auth-form" onSubmit={setupAdmin}>
+              <label>Administrator username
+                <div className="auth-input"><Icon name="user" size={17}/><input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username" /></div>
+              </label>
+              <label>Password
+                <div className="auth-input"><Icon name="lock" size={17}/><input type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Use 12+ characters" /><button type="button" className="auth-visibility" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password visibility"><Icon name={showPassword ? 'eyeOff' : 'eye'} size={16}/></button></div>
+              </label>
+              <label>Confirm password
+                <div className="auth-input"><Icon name="lock" size={17}/><input type={showConfirm ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" /><button type="button" className="auth-visibility" onClick={() => setShowConfirm((v) => !v)} aria-label="Toggle confirmation visibility"><Icon name={showConfirm ? 'eyeOff' : 'eye'} size={16}/></button></div>
+              </label>
+              <div className="auth-security-note"><strong>Strong password required</strong><span>12+ characters · uppercase · lowercase · number · special character</span></div>
+              {error && <div className="auth-error">{error}</div>}
+              {message && <div className="auth-success">{message}</div>}
+              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Securing account…' : 'Set administrator password'} <Icon name="shield" size={17}/></button>
+            </form>
+          ) : (
             <form className="auth-form" onSubmit={login}>
-              <label>Email, phone or username<div className="auth-input"><Icon name="user" size={17}/><input autoComplete="username" value={form.identifier} onChange={(e)=>set('identifier',e.target.value)} placeholder="Enter your login" /></div></label>
-              <label>Password<div className="auth-input"><Icon name="lock" size={17}/><input type="password" autoComplete="current-password" value={form.password} onChange={(e)=>set('password',e.target.value)} placeholder="Enter your password" /></div></label>
-              <button type="button" className="auth-link auth-forgot" onClick={()=>{clearMessages();setMode('forgot');}}>Forgot password?</button>
-              {error && <div className="auth-error">{error}</div>}{pendingMessage && <div className="auth-success">{pendingMessage}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'} <Icon name="arrowRight" size={17}/></button>
-              <div className="auth-divider"><span>New here?</span></div>
-              <button type="button" className="auth-secondary" onClick={()=>{clearMessages();setMode('signup');}}>Create an account</button>
-            </form>
-          )}
-
-          {mode === 'signup' && (
-            <form className="auth-form" onSubmit={(e)=>{e.preventDefault();requestOtp('signup');}}>
-              <label>Full name<div className="auth-input"><Icon name="user" size={17}/><input value={form.name} onChange={(e)=>set('name',e.target.value)} placeholder="Your name" /></div></label>
-              <label>Email<div className="auth-input"><Icon name="mail" size={17}/><input type="email" value={form.email} onChange={(e)=>set('email',e.target.value)} placeholder="you@example.com" /></div></label>
-              <label>Phone number<div className="auth-input"><Icon name="phone" size={17}/><input value={form.phone} onChange={(e)=>set('phone',e.target.value)} placeholder="10-digit mobile number" /></div></label>
+              <label>Administrator username
+                <div className="auth-input"><Icon name="user" size={17}/><input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username" /></div>
+              </label>
+              <label>Password
+                <div className="auth-input"><Icon name="lock" size={17}/><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" /><button type="button" className="auth-visibility" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password visibility"><Icon name={showPassword ? 'eyeOff' : 'eye'} size={16}/></button></div>
+              </label>
               {error && <div className="auth-error">{error}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Sending OTP…' : 'Continue'} <Icon name="arrowRight" size={17}/></button>
-              <button type="button" className="auth-back" onClick={()=>{clearMessages();setMode('login');}}>Back to sign in</button>
-            </form>
-          )}
-
-          {(mode === 'signup-otp' || mode === 'forgot-otp') && (
-            <form className="auth-form" onSubmit={(e)=>{e.preventDefault();verifyOtp(mode === 'signup-otp' ? 'signup' : 'forgot');}}>
-              <div className="otp-icon"><Icon name="shield" size={24}/></div>
-              <p className="otp-help">Enter the 6-digit verification code sent to your registered contact.</p>
-              {localMode && devOtp && <div className="dev-otp">Development OTP: <strong>{devOtp}</strong></div>}
-              <label>Verification code<div className="auth-input"><Icon name="key" size={17}/><input inputMode="numeric" maxLength={6} value={form.otp} onChange={(e)=>set('otp',e.target.value.replace(/\D/g,'').slice(0,6))} placeholder="000000" /></div></label>
-              {error && <div className="auth-error">{error}</div>}{pendingMessage && <div className="auth-success">{pendingMessage}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Verify OTP'} <Icon name="check" size={17}/></button>
-              <button type="button" className="auth-back" onClick={()=>requestOtp(mode === 'signup-otp' ? 'signup' : 'forgot')}><Icon name="refresh" size={15}/> Send new code</button>
-            </form>
-          )}
-
-          {mode === 'setup' && (
-            <form className="auth-form" onSubmit={finishSignup}>
-              <label>Username<div className="auth-input"><Icon name="user" size={17}/><input autoComplete="username" value={form.username} onChange={(e)=>set('username',e.target.value.replace(/\s/g,'').toLowerCase())} placeholder="Choose a username" /></div></label>
-              <label>Password<div className="auth-input"><Icon name="lock" size={17}/><input type="password" autoComplete="new-password" value={form.password} onChange={(e)=>set('password',e.target.value)} placeholder="At least 8 characters" /></div></label>
-              <label>Confirm password<div className="auth-input"><Icon name="lock" size={17}/><input type="password" autoComplete="new-password" value={form.confirmPassword} onChange={(e)=>set('confirmPassword',e.target.value)} placeholder="Re-enter your password" /></div></label>
-              {error && <div className="auth-error">{error}</div>}{pendingMessage && <div className="auth-success">{pendingMessage}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Creating account…' : 'Create account'} <Icon name="check" size={17}/></button>
-            </form>
-          )}
-
-          {mode === 'forgot' && (
-            <form className="auth-form" onSubmit={(e)=>{e.preventDefault();requestOtp('forgot');}}>
-              <label>Email, phone or username<div className="auth-input"><Icon name="mail" size={17}/><input value={form.identifier} onChange={(e)=>set('identifier',e.target.value)} placeholder="Enter your account identifier" /></div></label>
-              {error && <div className="auth-error">{error}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Sending OTP…' : 'Send reset OTP'} <Icon name="arrowRight" size={17}/></button>
-              <button type="button" className="auth-back" onClick={()=>{clearMessages();setMode('login');}}>Back to sign in</button>
-            </form>
-          )}
-
-          {mode === 'reset' && (
-            <form className="auth-form" onSubmit={resetPassword}>
-              <label>New password<div className="auth-input"><Icon name="lock" size={17}/><input type="password" autoComplete="new-password" value={form.password} onChange={(e)=>set('password',e.target.value)} placeholder="At least 8 characters" /></div></label>
-              <label>Confirm new password<div className="auth-input"><Icon name="lock" size={17}/><input type="password" autoComplete="new-password" value={form.confirmPassword} onChange={(e)=>set('confirmPassword',e.target.value)} placeholder="Re-enter password" /></div></label>
-              {error && <div className="auth-error">{error}</div>}{pendingMessage && <div className="auth-success">{pendingMessage}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Updating…' : 'Set new password'} <Icon name="check" size={17}/></button>
+              {message && <div className="auth-success">{message}</div>}
+              {remainingLock > 0 && <div className="auth-security-note"><strong>Temporary sign-in lock</strong><span>Too many failed attempts. Try again in {remainingLock}s.</span></div>}
+              <button className="auth-submit" type="submit" disabled={busy || remainingLock > 0}>{busy ? 'Signing in…' : 'Sign in securely'} <Icon name="arrowRight" size={17}/></button>
             </form>
           )}
         </div>
@@ -1952,14 +1925,14 @@ function AuthPage({ onAuthenticated }) {
    ========================================================= */
 export default function App() {
   const [authUser, setAuthUser] = useState(() => readJsonStorage(sessionStorage, AUTH_SESSION_KEY, null));
-  const [adminProfile, setAdminProfile] = useState(() => readJsonStorage(localStorage, 'sakthi_admin_profile_v1', readJsonStorage(sessionStorage, AUTH_SESSION_KEY, null) || { name: 'Admin User', email: '', phone: '', bankName: '', accountNumber: '', ifsc: '', profilePhoto: null }));
-  const [properties, setProperties] = useState(DEMO_DATA_ENABLED ? [DEMO_PROPERTY] : []);
-  const [tenants, setTenants] = useState(DEMO_DATA_ENABLED ? [DEMO_ACTIVE_TENANT, DEMO_PREVIOUS_TENANT] : []);
-  const [bills, setBills] = useState(DEMO_DATA_ENABLED ? DEMO_BILLS : []);
+  const [adminProfile, setAdminProfile] = useState(() => readJsonStorage(localStorage, 'sakthi_admin_profile_v1', { name: 'Administrator', email: '', phone: '', bankName: '', accountNumber: '', ifsc: '', profilePhoto: null }));
+  const [properties, setProperties] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [bills, setBills] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
   const [storageFees, setStorageFees] = useState([]);
   const [managers, setManagers] = useState([]);
-  const [notifications, setNotifications] = useState(DEMO_DATA_ENABLED ? DEMO_NOTIFICATIONS : []);
+  const [notifications, setNotifications] = useState([]);
   const [notifPrefs, setNotifPrefs] = useState({ rentReminders: true, maintenanceAlerts: true, newTenantAlerts: true, automaticMessages: true });
   const [toasts, setToasts] = useState([]);
   const [page, setPage] = useState('dashboard');

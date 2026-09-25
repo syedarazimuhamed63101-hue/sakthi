@@ -6543,3 +6543,370 @@ a,
   display:block !important;
   border-radius:50% !important;
 }
+
+/* =========================================================
+   FINAL BUTTON + QUICK ACTIONS CLEANUP
+   ========================================================= */
+
+/* Keep modal/action buttons consistent with the navy property-management theme. */
+.modal-footer .btn,
+.modal-footer-inline .btn,
+.confirm-dialog .btn {
+  min-height: 40px !important;
+  padding: 9px 18px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.modal-footer .btn-ghost,
+.modal-footer-inline .btn-ghost {
+  background: #f7f9fc !important;
+  border: 1px solid #dbe3eb !important;
+  color: #315477 !important;
+}
+
+.modal-footer .btn-ghost:hover,
+.modal-footer-inline .btn-ghost:hover {
+  background: #eef3f8 !important;
+  border-color: #cbd8e5 !important;
+  color: #173f78 !important;
+}
+
+.modal-footer .btn-danger,
+.modal-footer-inline .btn-danger {
+  background: #b65d5d !important;
+  border: 1px solid #b65d5d !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.modal-footer .btn-danger:hover,
+.modal-footer-inline .btn-danger:hover {
+  background: #9f4f4f !important;
+  border-color: #9f4f4f !important;
+  color: #fff !important;
+}
+
+.modal-footer .btn-primary,
+.modal-footer-inline .btn-primary {
+  background: #0f3c70 !important;
+  border: 1px solid #0f3c70 !important;
+  color: #fff !important;
+}
+
+.modal-footer .btn-primary:hover,
+.modal-footer-inline .btn-primary:hover {
+  background: #0b315c !important;
+  border-color: #0b315c !important;
+}
+
+/* Quick Actions: horizontal scroll is intentional; each button is a complete
+   fixed-width tile so the label and arrow never compete or overlap. */
+.dashboard-page .quick-panel {
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+.dashboard-page .quick-actions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 2px 2px 11px !important;
+  box-sizing: border-box !important;
+  scroll-behavior: smooth !important;
+  scrollbar-width: thin !important;
+}
+
+.dashboard-page .quick-actions button {
+  flex: 0 0 240px !important;
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  display: grid !important;
+  grid-template-columns: 48px 122px 20px !important;
+  align-items: center !important;
+  justify-content: start !important;
+  column-gap: 10px !important;
+  padding: 10px 10px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+  border: 1px solid #d8e2eb !important;
+  border-radius: 10px !important;
+  background: #fffdfa !important;
+  color: #173f78 !important;
+}
+
+.dashboard-page .quick-action-icon {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  border-radius: 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  place-items: center !important;
+  align-self: center !important;
+  justify-self: center !important;
+  background: #173f78 !important;
+  color: #fff !important;
+  overflow: hidden !important;
+}
+
+.dashboard-page .quick-action-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  align-self: center !important;
+  justify-self: center !important;
+  color: #fff !important;
+  stroke: #fff !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-page .quick-action-label {
+  display: block !important;
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  color: #173f78 !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.dashboard-page .quick-action-arrow {
+  display: flex !important;
+  width: 20px !important;
+  min-width: 20px !important;
+  height: 24px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #355f87 !important;
+  font-size: 21px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+.dashboard-page .quick-actions button:hover {
+  background: #ffffff !important;
+  border-color: #b9cada !important;
+  transform: translateY(-1px) !important;
+}
+
+.dashboard-page .quick-actions::-webkit-scrollbar {
+  height: 7px !important;
+}
+
+.dashboard-page .quick-actions::-webkit-scrollbar-thumb {
+  background: #c9d8e4 !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 760px) {
+  .dashboard-page .quick-actions button {
+    flex-basis: 232px !important;
+    width: 232px !important;
+    min-width: 232px !important;
+    max-width: 232px !important;
+    grid-template-columns: 46px 116px 20px !important;
+  }
+
+  .dashboard-page .quick-action-icon {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+  }
+
+  .dashboard-page .quick-action-label {
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    font-size: 13px !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL ADMIN-ONLY AUTH + QUICK ACTION POLISH
+   ========================================================= */
+.auth-visibility{
+  width:28px !important;
+  height:28px !important;
+  flex:0 0 28px !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#5d7695 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 !important;
+  margin:0 !important;
+  cursor:pointer !important;
+}
+.auth-visibility:hover{
+  color:#123f78 !important;
+  background:#eef3f8 !important;
+  border-radius:7px !important;
+}
+.auth-visibility svg{
+  width:16px !important;
+  height:16px !important;
+  color:currentColor !important;
+  stroke:currentColor !important;
+}
+.auth-security-note{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:4px !important;
+  padding:10px 12px !important;
+  background:#f4f7fa !important;
+  border:1px solid #dfe7ef !important;
+  border-radius:10px !important;
+  color:#385371 !important;
+  font-size:11px !important;
+  line-height:1.4 !important;
+}
+.auth-security-note strong{
+  color:#173f73 !important;
+  font-size:12px !important;
+}
+.auth-security-note span{
+  color:#6f8196 !important;
+}
+
+/* Quick Actions: horizontal scrolling stays, but labels and arrows have
+   independent space so they never overlap. */
+.dashboard-page .quick-actions{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  gap:12px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  padding:2px 2px 11px !important;
+  scrollbar-width:thin !important;
+}
+.dashboard-page .quick-actions button{
+  flex:0 0 250px !important;
+  width:250px !important;
+  min-width:250px !important;
+  max-width:250px !important;
+  height:78px !important;
+  min-height:78px !important;
+  max-height:78px !important;
+  display:grid !important;
+  grid-template-columns:48px minmax(0,1fr) 20px !important;
+  align-items:center !important;
+  gap:10px !important;
+  padding:10px 12px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+.dashboard-page .quick-action-icon{
+  width:48px !important;
+  height:48px !important;
+  min-width:48px !important;
+  min-height:48px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  place-items:center !important;
+  margin:0 !important;
+  border-radius:9px !important;
+}
+.dashboard-page .quick-action-icon svg{
+  display:block !important;
+  width:20px !important;
+  height:20px !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+.dashboard-page .quick-action-label{
+  min-width:0 !important;
+  width:auto !important;
+  max-width:none !important;
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size:13px !important;
+  line-height:1.2 !important;
+  font-weight:700 !important;
+}
+.dashboard-page .quick-action-arrow{
+  width:20px !important;
+  min-width:20px !important;
+  height:24px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  margin:0 !important;
+  padding:0 !important;
+  font-size:20px !important;
+  line-height:1 !important;
+}
+@media (max-width:760px){
+  .dashboard-page .quick-actions button{
+    flex-basis:240px !important;
+    width:240px !important;
+    min-width:240px !important;
+    max-width:240px !important;
+    grid-template-columns:46px minmax(0,1fr) 20px !important;
+    gap:9px !important;
+  }
+  .dashboard-page .quick-action-icon{
+    width:46px !important;
+    height:46px !important;
+    min-width:46px !important;
+    min-height:46px !important;
+  }
+}
+
+/* Remove accidental dark modal/button variants introduced by older overrides. */
+.modal-footer .btn-primary,
+.modal-footer-inline .btn-primary,
+.confirm-dialog .btn-primary{
+  background:#123f78 !important;
+  border-color:#123f78 !important;
+  color:#fff !important;
+}
+.modal-footer .btn-primary:hover,
+.modal-footer-inline .btn-primary:hover,
+.confirm-dialog .btn-primary:hover{
+  background:#0e3564 !important;
+  border-color:#0e3564 !important;
+  color:#fff !important;
+}
