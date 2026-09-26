@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import './App.css';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 /* =========================================================
    ICONS — small inline SVG set, no external icon library
    ========================================================= */
@@ -625,7 +627,7 @@ function emptyProperty() {
   return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, length: '', width: '', carpetArea: '', builtupArea: '', plotArea: '', facingRoad: '', landUse: 'Residential', expectedPrice: '', pricePerSqft: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, ownerDocumentsList: [], propertyDocumentsList: [], status: 'Available', rentAmount: '', forSale: false, listed: false };
 }
 
-function PropertyForm({ initial, onSave, onCancel }) {
+function PropertyForm({ initial, onSave, onCancel, pushToast }) {
   const [form, setForm] = useState(() => {
     const base = initial ? { ...emptyProperty(), ...initial, mode: initial.type === 'Land' ? 'land' : 'building' } : emptyProperty();
     if ((!base.ownerDocumentsList || base.ownerDocumentsList.length === 0) && base.ownerDocuments) base.ownerDocumentsList = legacyDocumentsToList(base.ownerDocuments, { identity: 'Owner ID proof', ownership: 'Ownership / title document', addressProof: 'Owner address proof' });
@@ -1068,10 +1070,26 @@ function PropertiesPage({ properties, onAdd, onUpdate, onDelete, onToggleSale, p
       </div>
       {modalOpen && (
         <Modal title={editing ? 'Edit property' : 'Add property'} onClose={() => setModalOpen(false)} wide>
-          <PropertyForm initial={editing} onCancel={() => setModalOpen(false)} onSave={(obj) => {
-            if (editing) { onUpdate(obj); pushToast('Property updated'); } else { onAdd(obj); pushToast('Property added'); }
-            setModalOpen(false);
-          }} />
+          <PropertyForm
+            initial={editing}
+            onCancel={() => setModalOpen(false)}
+            pushToast={pushToast}
+            onSave={async (obj) => {
+              try {
+                if (editing) {
+                  onUpdate(obj);
+                  pushToast('Property updated');
+                } else {
+                  await onAdd(obj);
+                  pushToast('Property added successfully');
+                }
+                setModalOpen(false);
+              } catch (error) {
+                console.error('Property save error:', error);
+                pushToast(error.message || 'Failed to save property', 'danger');
+              }
+            }}
+          />
         </Modal>
       )}
       {confirmDelete && (
@@ -2076,6 +2094,33 @@ export default function App() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProperties() {
+      try {
+        const response = await fetch(`${API_BASE}/properties`);
+        const data = await response.json().catch(() => []);
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load properties');
+        }
+
+        if (!cancelled) {
+          setProperties(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Property loading error:', error);
+      }
+    }
+
+    loadProperties();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function pushToast(msg, type = 'success') {
     const id = uid();
     setToasts((t) => [...t, { id, msg, type }]);
@@ -2089,7 +2134,23 @@ export default function App() {
     pushNotification(`Message to ${tenant.fullName}: ${text}`, 'send');
   }
 
-  function addProperty(p) { setProperties((ps) => [p, ...ps]); pushNotification(`New property added: ${p.name}`); }
+  async function addProperty(p) {
+    const response = await fetch(`${API_BASE}/properties`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(p),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to save property');
+    }
+
+    setProperties((ps) => [data, ...ps]);
+    pushNotification(`New property added: ${data.name}`);
+    return data;
+  }
   function updateProperty(p) { setProperties((ps) => ps.map((x) => (x.id === p.id ? p : x))); }
   function deleteProperty(id) { setProperties((ps) => ps.filter((x) => x.id !== id)); }
   function toggleSale(id) { setProperties((ps) => ps.map((p) => (p.id === id ? { ...p, forSale: !p.forSale } : p))); }
