@@ -44,6 +44,8 @@ const ICONS = {
   refresh: <><path d="M20 11a8 8 0 1 0 1 5" /><path d="M20 4v7h-7" /></>,
   arrowRight: <><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>,
   external: <><path d="M14 5h5v5" /><path d="m19 5-8 8" /><path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" /></>,
+  camera: <><path d="M4 7h4l1.5-2h5L16 7h4v12H4z" /><circle cx="12" cy="13" r="3.2" /></>,
+  filePlus: <><path d="M14 3v5h5" /><path d="M6 3h8l5 5v13H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" /><path d="M12 12v6M9 15h6" /></>,
 };
 
 function Icon({ name, size = 18, className = '' }) {
@@ -97,11 +99,48 @@ function downloadDocument(doc) {
 
 function viewableDocument(doc) { return !!(doc && doc.dataUrl); }
 
-function makeDocumentRecord(file) {
+const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
+const PROFILE_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED_DOCUMENT_EXTENSIONS = new Set(['jpg','jpeg','png','webp','pdf','doc','docx']);
+const IMAGE_EXTENSIONS = new Set(['jpg','jpeg','png','webp']);
+
+function safeFileName(name) {
+  return String(name || 'document')
+    .replace(/[\\\/\u0000-\u001F<>:"|?*]+/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120) || 'document';
+}
+
+function fileExtension(name) {
+  const parts = String(name || '').toLowerCase().split('.');
+  return parts.length > 1 ? parts.pop() : '';
+}
+
+function validateUpload(file, { imageOnly = false, maxBytes = DOCUMENT_MAX_BYTES } = {}) {
+  if (!file) return 'No file selected.';
+  if (file.size <= 0) return 'The selected file is empty.';
+  if (file.size > maxBytes) return `File is too large. Maximum allowed size is ${Math.round(maxBytes / (1024 * 1024))} MB.`;
+  const ext = fileExtension(file.name);
+  if (imageOnly && !IMAGE_EXTENSIONS.has(ext)) return 'Use JPG, JPEG, PNG or WEBP for profile photos.';
+  if (!imageOnly && !ALLOWED_DOCUMENT_EXTENSIONS.has(ext)) return 'File type not allowed. Use JPG, JPEG, PNG, WEBP, PDF, DOC or DOCX.';
+  if (file.type === 'text/html' || file.type === 'image/svg+xml' || /javascript|html|svg/i.test(file.type || '')) return 'This file type is blocked for security.';
+  return '';
+}
+
+function makeDocumentRecord(file, options = {}) {
   return new Promise((resolve) => {
-    if (!file) return resolve(null);
+    const error = validateUpload(file, options);
+    if (error) { resolve(null); return; }
     const reader = new FileReader();
-    reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
+    reader.onload = () => resolve({
+      id: uid(),
+      name: safeFileName(file.name),
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      dataUrl: reader.result,
+      uploadedAt: new Date().toISOString(),
+    });
     reader.onerror = () => resolve(null);
     reader.readAsDataURL(file);
   });
@@ -484,14 +523,114 @@ function Topbar({ query, setQuery, searchResults, onNavigate, notifications, unr
 }
 
 /* =========================================================
+   DOCUMENT MANAGER
+   Unlimited document entries with secure client-side checks.
+   ========================================================= */
+function normalizeDocumentList(list) {
+  return Array.isArray(list) ? list.map((d) => normalizeDocumentValue(d)).filter(Boolean) : [];
+}
+
+function legacyDocumentsToList(value, labels) {
+  if (!value || typeof value !== 'object') return [];
+  return Object.entries(value).flatMap(([key, val]) => {
+    const doc = normalizeDocumentValue(val);
+    if (!doc) return [];
+    if (doc.legacy) return [{ id: uid(), name: labels[key] || key, legacy: true }];
+    return [{ ...doc, id: doc.id || uid(), name: doc.name || labels[key] || key }];
+  });
+}
+
+function DocumentManager({ title, documents, onChange, pushToast, imageOnly = false }) {
+  const [draftName, setDraftName] = useState('');
+  const [preview, setPreview] = useState(null);
+  const [status, setStatus] = useState('');
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const docs = normalizeDocumentList(documents);
+
+  async function addFile(file) {
+    if (!file) return;
+    setStatus('');
+    const error = validateUpload(file, { imageOnly, maxBytes: imageOnly ? PROFILE_PHOTO_MAX_BYTES : DOCUMENT_MAX_BYTES });
+    if (error) {
+      setStatus(error);
+      return;
+    }
+    const record = await makeDocumentRecord(file, { imageOnly, maxBytes: imageOnly ? PROFILE_PHOTO_MAX_BYTES : DOCUMENT_MAX_BYTES });
+    if (!record) {
+      setStatus('Could not read the selected file.');
+      return;
+    }
+    const named = { ...record, name: safeFileName(draftName || record.name) };
+    onChange([...docs, named]);
+    setDraftName('');
+  }
+
+  function remove(id) {
+    onChange(docs.filter((doc) => doc.id !== id));
+  }
+
+  return (
+    <div className="document-manager">
+      <div className="document-manager-head">
+        <div>
+          <h4>{title}</h4>
+          <p className="muted small">Add as many documents as needed. Max {imageOnly ? '5' : '10'} MB per file.</p>
+        </div>
+        <span className="document-security-note"><Icon name="shield" size={14}/> Secure file checks</span>
+      </div>
+
+      <div className="document-add-bar">
+        <input className="document-name-input" value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="Document name (optional)" maxLength={80} />
+        <label className="btn btn-outline btn-sm document-add-btn">
+          <input ref={fileInputRef} type="file" accept={imageOnly ? 'image/jpeg,image/png,image/webp' : 'image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx'} onChange={(e) => { const file = e.target.files?.[0]; addFile(file); e.target.value = ''; }} />
+          <Icon name="filePlus" size={14}/> Upload file
+        </label>
+        {!imageOnly && (
+          <label className="btn btn-outline btn-sm document-add-btn camera-btn">
+            <input ref={cameraInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(e) => { const file = e.target.files?.[0]; addFile(file); e.target.value = ''; }} />
+            <Icon name="camera" size={14}/> Camera
+          </label>
+        )}
+      </div>
+
+      <div className="document-security-help">Allowed: JPG, PNG, WEBP, PDF, DOC, DOCX. Executable, HTML and SVG files are blocked.</div>
+      {status && <div className="document-upload-error" role="alert">{status}</div>}
+
+      {docs.length === 0 ? (
+        <div className="document-empty"><Icon name="file" size={20}/><span>No documents added yet.</span></div>
+      ) : (
+        <div className="document-manager-list">
+          {docs.map((doc, index) => (
+            <div className="document-manager-row" key={doc.id || `${doc.name}-${index}`}>
+              <div className="document-manager-info"><span className="document-manager-index">{index + 1}</span><Icon name="file" size={18}/><div><strong>{doc.name}</strong><small>{doc.legacy ? 'Legacy record' : `${documentStatus(doc)}${doc.size ? ` · ${(doc.size / 1024 / 1024).toFixed(1)} MB` : ''}`}</small></div></div>
+              <div className="document-manager-actions">
+                {viewableDocument(doc) && <button type="button" className="btn btn-xs btn-outline" onClick={() => setPreview({ doc, title: doc.name })}>View</button>}
+                {doc?.dataUrl && <button type="button" className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}><Icon name="download" size={12}/> Download</button>}
+                <button type="button" className="btn btn-xs btn-outline" onClick={() => remove(doc.id)} aria-label={`Remove ${doc.name}`}><Icon name="trash" size={12}/></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {preview && <DocumentViewer documentRecord={preview.doc} title={preview.title} onClose={() => setPreview(null)} />}
+    </div>
+  );
+}
+
+/* =========================================================
    PROPERTY FORM
    ========================================================= */
 function emptyProperty() {
-  return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, length: '', width: '', carpetArea: '', builtupArea: '', plotArea: '', facingRoad: '', landUse: 'Residential', expectedPrice: '', pricePerSqft: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, status: 'Available', rentAmount: '', forSale: false, listed: false };
+  return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, length: '', width: '', carpetArea: '', builtupArea: '', plotArea: '', facingRoad: '', landUse: 'Residential', expectedPrice: '', pricePerSqft: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, ownerDocumentsList: [], propertyDocumentsList: [], status: 'Available', rentAmount: '', forSale: false, listed: false };
 }
 
 function PropertyForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState(() => initial ? { ...emptyProperty(), ...initial, mode: initial.type === 'Land' ? 'land' : 'building' } : emptyProperty());
+  const [form, setForm] = useState(() => {
+    const base = initial ? { ...emptyProperty(), ...initial, mode: initial.type === 'Land' ? 'land' : 'building' } : emptyProperty();
+    if ((!base.ownerDocumentsList || base.ownerDocumentsList.length === 0) && base.ownerDocuments) base.ownerDocumentsList = legacyDocumentsToList(base.ownerDocuments, { identity: 'Owner ID proof', ownership: 'Ownership / title document', addressProof: 'Owner address proof' });
+    return base;
+  });
   const [landmarkDraft, setLandmarkDraft] = useState({ name: '', distance: '', type: '' });
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); }
@@ -619,16 +758,8 @@ function PropertyForm({ initial, onSave, onCancel }) {
           <label>Status<select value={form.status} onChange={(e) => set('status', e.target.value)}><option>Available</option><option>Occupied</option></select></label>
         </div>
         <div className="form-section documents-subsection">
-          <h4>Owner documents</h4>
-          <div className="doc-rows">
-            {[['identity','Owner ID proof'],['ownership','Ownership / title document'],['addressProof','Owner address proof']].map(([key,label]) => {
-              const doc = normalizeDocumentValue(form.ownerDocuments?.[key]);
-              return <div className="doc-row" key={key}>
-                <div className="doc-row-left"><Icon name="file" size={18} /><div><span>{label}</span><div className="muted small">{documentStatus(doc)}</div></div></div>
-                <label className="file-upload-btn btn btn-outline btn-sm"><input type="file" accept="image/*,.pdf,.doc,.docx" onChange={async (e) => { const rec = await makeDocumentRecord(e.target.files?.[0]); if(rec) set('ownerDocuments',{ ...(form.ownerDocuments || {}), [key]: rec }); }} />{doc ? 'Replace' : 'Upload'}</label>
-              </div>;
-            })}
-          </div>
+          <DocumentManager title="Owner documents" documents={form.ownerDocumentsList || []} onChange={(list) => set('ownerDocumentsList', list)} pushToast={pushToast} />
+          <DocumentManager title="Property documents" documents={form.propertyDocumentsList || []} onChange={(list) => set('propertyDocumentsList', list)} pushToast={pushToast} />
         </div>
       </div>
 
@@ -644,18 +775,22 @@ function PropertyForm({ initial, onSave, onCancel }) {
    TENANT FORM
    ========================================================= */
 function emptyTenant() {
-  return { id: null, propertyId: '', fullName: '', dob: '', gender: '', maritalStatus: '', livingInHouse: 'Yes', education: '', occupation: '', religion: '', phone: '', email: '', nativeAddress: '', workAddress: '', familyCount: 0, familyMembers: [], documents: { idProof: null, addressProof: null, panProof: null }, rehotraType: '', rehotraNumber: '', rentAmount: '', advanceAmount: '', maintenanceFee: '', brokerageFee: '', dateOfComing: '', dateOfLeaving: '', status: 'Active', rentHistory: [] };
+  return { id: null, propertyId: '', fullName: '', dob: '', gender: '', maritalStatus: '', livingInHouse: 'Yes', education: '', occupation: '', religion: '', phone: '', email: '', nativeAddress: '', workAddress: '', familyCount: 0, familyMembers: [], documents: { idProof: null, addressProof: null, panProof: null }, documentsList: [], rehotraType: '', rehotraNumber: '', rentAmount: '', advanceAmount: '', maintenanceFee: '', brokerageFee: '', dateOfComing: '', dateOfLeaving: '', status: 'Active', rentHistory: [] };
 }
 
-function TenantForm({ initial, properties, onSave, onCancel }) {
-  const [form, setForm] = useState(() => initial ? { ...emptyTenant(), ...initial } : emptyTenant());
+function TenantForm({ initial, properties, onSave, onCancel, pushToast }) {
+  const [form, setForm] = useState(() => {
+    const base = initial ? { ...emptyTenant(), ...initial } : emptyTenant();
+    if ((!base.documentsList || base.documentsList.length === 0) && base.documents) base.documentsList = legacyDocumentsToList(base.documents, { idProof: 'ID proof', addressProof: 'Address proof', panProof: 'PAN proof' });
+    return base;
+  });
   const [memberDraft, setMemberDraft] = useState({ relation: '', name: '', phone: '' });
   const [tenantPhoto, setTenantPhoto] = useState(initial?.profilePhoto || null);
   const [propertySearch, setPropertySearch] = useState('');
 
   function set(f, v) { setForm((s) => ({ ...s, [f]: v })); }
   async function setDoc(k, event) { const rec = await makeDocumentRecord(event.target.files?.[0]); if (rec) setForm((s) => ({ ...s, documents: { ...s.documents, [k]: rec } })); }
-  async function setProfilePhoto(event) { const rec = await makeDocumentRecord(event.target.files?.[0]); if (rec?.dataUrl) setTenantPhoto(rec.dataUrl); }
+  async function setProfilePhoto(event) { const rec = await makeDocumentRecord(event.target.files?.[0], { imageOnly: true, maxBytes: PROFILE_PHOTO_MAX_BYTES }); if (rec?.dataUrl) setTenantPhoto(rec.dataUrl); }
   function addMember() { if (!memberDraft.name) return; setForm((s) => ({ ...s, familyMembers: [...s.familyMembers, memberDraft], familyCount: s.familyMembers.length + 1 })); setMemberDraft({ relation: '', name: '', phone: '' }); }
   function removeMember(i) { setForm((s) => ({ ...s, familyMembers: s.familyMembers.filter((_, idx) => idx !== i), familyCount: Math.max(0, s.familyMembers.length - 1) })); }
 
@@ -669,7 +804,7 @@ function TenantForm({ initial, properties, onSave, onCancel }) {
     <form className="form" onSubmit={submit}>
       <div className="form-section">
         <h4>Personal details</h4>
-        <div className="tenant-photo-row"><div className="tenant-photo-preview">{tenantPhoto ? <img src={tenantPhoto} alt="Tenant profile" /> : <Icon name="user" size={24} />}</div><label className="file-upload-btn btn btn-outline btn-sm"><input type="file" accept="image/*" onChange={setProfilePhoto} />{tenantPhoto ? 'Change photo' : 'Add profile photo'}</label></div>
+        <div className="tenant-photo-row"><div className="tenant-photo-preview">{tenantPhoto ? <img src={tenantPhoto} alt="Tenant profile" /> : <Icon name="user" size={24} />}</div><label className="file-upload-btn btn btn-outline btn-sm"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={setProfilePhoto} />{tenantPhoto ? 'Change photo' : 'Add profile photo'}</label></div>
         <div className="photo-upload"><div className="photo-circle"><Icon name="users" size={22} /></div><span className="muted small">Tenant profile photo</span></div>
         <div className="form-grid">
           <label>Full name *<input required value={form.fullName} onChange={(e) => set('fullName', e.target.value)} /></label>
@@ -723,15 +858,7 @@ function TenantForm({ initial, properties, onSave, onCancel }) {
       </div>
 
       <div className="form-section">
-        <h4>Documents</h4>
-        <div className="doc-rows">
-          {[['idProof', 'ID proof'], ['addressProof', 'Address proof'], ['panProof', 'PAN proof']].map(([k, label]) => (
-            <div className="doc-row" key={k}>
-              <div className="doc-row-left"><Icon name="file" size={18} /> <div><span>{label}</span><div className="muted small">{form.documents[k] ? 'Uploaded' : 'No document found'}</div></div></div>
-              <label className={`file-upload-btn btn btn-sm ${normalizeDocumentValue(form.documents[k]) ? 'btn-success' : 'btn-outline'}`}><input type="file" accept="image/*,.pdf,.doc,.docx" onChange={(e) => setDoc(k, e)} />{normalizeDocumentValue(form.documents[k]) ? 'Replace' : 'Upload'}</label>
-            </div>
-          ))}
-        </div>
+        <DocumentManager title="Tenant documents" documents={form.documentsList || []} onChange={(list) => set('documentsList', list)} pushToast={pushToast} />
         <div className="form-grid">
           <label>Rehotra ID type<select value={form.rehotraType} onChange={(e) => set('rehotraType', e.target.value)}><option value="">Select document</option>{DOCUMENT_TYPES.map((d) => <option key={d}>{d}</option>)}</select></label>
           <label>Document number<input value={form.rehotraNumber} onChange={(e) => set('rehotraNumber', e.target.value)} /></label>
@@ -1019,7 +1146,7 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
       </div>
       {modalOpen && (
         <Modal title={editing ? 'Edit tenant' : 'Add tenant'} onClose={() => setModalOpen(false)} wide>
-          <TenantForm initial={editing} properties={properties} onCancel={() => setModalOpen(false)} onSave={(obj) => {
+          <TenantForm initial={editing} properties={properties} pushToast={pushToast} onCancel={() => setModalOpen(false)} onSave={(obj) => {
             if (editing) { onUpdate(obj); pushToast('Tenant updated'); } else { onAdd(obj); pushToast('Tenant added'); }
             setModalOpen(false);
           }} />
@@ -1038,8 +1165,17 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
               <div className="detail-card"><h4>Tenant documents</h4>
                 {[['idProof','ID proof'],['addressProof','Address proof'],['panProof','PAN proof']].map(([key,label]) => { const doc=normalizeDocumentValue(docs[key]); return <div className="doc-view-row" key={key}><span>{label} — {documentStatus(doc)}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${detailOf.fullName} — ${label}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>; })}
               </div>
+              <div className="detail-card"><h4>Additional tenant documents</h4>
+                {(detailOf.documentsList || []).length === 0 ? <p className="muted">No additional documents uploaded.</p> : detailOf.documentsList.map((doc) => <div className="doc-view-row" key={doc.id || doc.name}><span>{doc.name}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${detailOf.fullName} — ${doc.name}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>)}
+              </div>
               <div className="detail-card"><h4>Property owner documents</h4>
                 {['identity','ownership','addressProof'].map((key) => { const labels={identity:'Owner ID proof',ownership:'Ownership / title document',addressProof:'Owner address proof'}; const doc=normalizeDocumentValue(property?.ownerDocuments?.[key]); return <div className="doc-view-row" key={key}><span>{labels[key]} — {documentStatus(doc)}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${property?.ownerName || 'Owner'} — ${labels[key]}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>; })}
+              </div>
+              <div className="detail-card"><h4>Additional owner documents</h4>
+                {(property?.ownerDocumentsList || []).length === 0 ? <p className="muted">No additional owner documents uploaded.</p> : property.ownerDocumentsList.map((doc) => <div className="doc-view-row" key={doc.id || doc.name}><span>{doc.name}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${property?.ownerName || 'Owner'} — ${doc.name}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>)}
+              </div>
+              <div className="detail-card"><h4>Property documents</h4>
+                {(property?.propertyDocumentsList || []).length === 0 ? <p className="muted">No additional property documents uploaded.</p> : property.propertyDocumentsList.map((doc) => <div className="doc-view-row" key={doc.id || doc.name}><span>{doc.name}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${property.name} — ${doc.name}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>)}
               </div>
               <div className="detail-card"><h4>Previous tenants for this property</h4>
                 {previousTenants.length === 0 ? <p className="muted">No previous tenant records for this property.</p> : previousTenants.map((prev) => <div className="previous-tenant-row" key={prev.id}><span><b>{prev.fullName}</b><small>{formatDate(prev.dateOfComing)} → {formatDate(prev.dateOfLeaving)}</small></span><button className="btn btn-xs btn-outline" onClick={() => setDetailOf(prev)}>View</button></div>)}
@@ -1460,7 +1596,7 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
                 <strong>Admin profile photo</strong>
                 <span>JPG, PNG or WEBP</span>
                 <label className="file-upload-btn btn btn-outline btn-sm">
-                  <input type="file" accept="image/*" onChange={async (e) => { const rec = await makeDocumentRecord(e.target.files?.[0]); if (rec?.dataUrl) setProfile((p) => ({ ...p, profilePhoto: rec.dataUrl })); }} />
+                  <input type="file" accept="image/*" onChange={async (e) => { const rec = await makeDocumentRecord(e.target.files?.[0], { imageOnly: true, maxBytes: PROFILE_PHOTO_MAX_BYTES }); if (rec?.dataUrl) setProfile((p) => ({ ...p, profilePhoto: rec.dataUrl })); }} />
                   {profile.profilePhoto ? 'Change photo' : 'Choose photo'}
                 </label>
               </div>
