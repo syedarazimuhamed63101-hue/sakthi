@@ -175,7 +175,6 @@ function recordAsDownloadText(title, record) {
   return `${title}\n${'='.repeat(title.length)}\n\n${Object.entries(record).map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(printable(value), null, 2) : (value ?? '')}`).join('\n')}`;
 }
 
-
 function openWhatsAppForTenant(tenant, message) {
   if (!tenant?.phone) return false;
   const digits = String(tenant.phone).replace(/\D/g, '');
@@ -186,57 +185,105 @@ function openWhatsAppForTenant(tenant, message) {
   return true;
 }
 
-function downloadRentHistoryPDF(tenant, property) {
+function downloadRentHistoryFile(tenant, property, format = 'pdf') {
   if (!tenant) return;
   const history = Array.isArray(tenant.rentHistory) ? tenant.rentHistory : [];
-  const total = history.reduce((sum, r) => sum + Number(r.amount || 0), 0);
-  const paid = history.filter((r) => r.status === 'Paid').reduce((sum, r) => sum + Number(r.amount || 0), 0);
-  const pending = history.filter((r) => r.status !== 'Paid').reduce((sum, r) => sum + Number(r.amount || 0), 0);
-  const rows = history.map((r) => `
-    <tr>
-      <td>${r.month || ''} ${r.year || ''}</td>
-      <td>${formatCurrency(r.amount)}</td>
-      <td><span class="status ${String(r.status).toLowerCase()}">${r.status || 'Pending'}</span></td>
-      <td>${formatDate(r.paidDate)}</td>
-      <td>${formatDate(r.dueDate)}</td>
-    </tr>
-  `).join('');
-  const win = window.open('', '_blank', 'noopener,noreferrer,width=980,height=760');
-  if (!win) return;
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"/><title>${tenant.fullName} - Rent History</title>
-  <style>
-    @page{size:A4;margin:16mm}
-    *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#1d2d43;background:#fff;margin:0}
-    .header{border-bottom:2px solid #e8d8ad;padding:0 0 14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
-    .brand{font-size:22px;font-weight:800;color:#123f78;letter-spacing:.02em}.sub{font-size:11px;color:#708096;margin-top:3px}
-    h1{font-size:21px;margin:0 0 4px;color:#143c70}.muted{color:#748298;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
-    .box{border:1px solid #e1e8ef;border-radius:10px;padding:10px 12px;background:#fbfcfe}.box b{color:#183d6e}.box span{display:block;font-size:11px;color:#7b8798;margin-bottom:3px}.box strong{font-size:13px;color:#1d2d43}
-    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.summary .box{text-align:left}.summary .value{font-size:18px;font-weight:800;color:#123f78}
-    table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f4f7fb;color:#5d6d82;text-align:left;padding:8px;border-bottom:1px solid #dfe7ef}td{padding:8px;border-bottom:1px solid #e8edf3;color:#2b3a4d}
-    .status{font-weight:700}.status.paid{color:#4f8b68}.status.pending{color:#ad7a25}.status.overdue{color:#b76060}
-    .footer{margin-top:22px;padding-top:10px;border-top:1px solid #e4e9ef;font-size:10px;color:#8591a1}
-    @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-  </style></head><body>
-  <div class="header"><div><div class="brand">SAKTHI CONSTRUCTION</div><div class="sub">Property &amp; Facility Management</div></div><div class="muted">Rent History Report</div></div>
-  <h1>${tenant.fullName}</h1><div class="muted">Generated on ${formatDate(new Date())}</div>
-  <div class="meta" style="margin-top:14px">
-    <div class="box"><span>Property</span><strong>${property?.name || '—'}</strong></div>
-    <div class="box"><span>Property type</span><strong>${property?.type || '—'}</strong></div>
-    <div class="box"><span>Tenant phone</span><strong>${tenant.phone || '—'}</strong></div>
-    <div class="box"><span>Tenancy period</span><strong>${formatDate(tenant.dateOfComing)} - ${formatDate(tenant.dateOfLeaving)}</strong></div>
-    <div class="box"><span>Tenant status</span><strong>${tenant.status || 'Active'}</strong></div>
-    <div class="box"><span>Owner</span><strong>${property?.ownerName || '—'}</strong></div>
-  </div>
-  <div class="summary">
-    <div class="box"><span>Total recorded rent</span><div class="value">${formatCurrency(total)}</div></div>
-    <div class="box"><span>Rent paid</span><div class="value">${formatCurrency(paid)}</div></div>
-    <div class="box"><span>Outstanding</span><div class="value">${formatCurrency(pending)}</div></div>
-  </div>
-  <table><thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Paid on</th><th>Due date</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No rent history recorded.</td></tr>'}</tbody></table>
-  <div class="footer">Sakthi Construction - Tenant rent history. This report contains the rent records currently stored in the application.</div>
-  <script>window.onload=function(){setTimeout(function(){window.print()},250)};<\/script>
-  </body></html>`);
-  win.document.close();
+
+  if (format === 'pdf') {
+    const total = history.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    const paid = history.filter((r) => r.status === 'Paid').reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    const pending = history.filter((r) => r.status !== 'Paid').reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    const rows = history.map((r) => `
+      <tr>
+        <td>${r.month || ''} ${r.year || ''}</td>
+        <td>${formatCurrency(r.amount)}</td>
+        <td><span class="status ${String(r.status).toLowerCase()}">${r.status || 'Pending'}</span></td>
+        <td>${formatDate(r.paidDate)}</td>
+        <td>${formatDate(r.dueDate)}</td>
+      </tr>
+    `).join('');
+    const win = window.open('', '_blank', 'noopener,noreferrer,width=980,height=760');
+    if (!win) return;
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"/><title>${tenant.fullName} - Rent History</title>
+    <style>
+      @page{size:A4;margin:16mm}
+      *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#1d2d43;background:#fff;margin:0}
+      .header{border-bottom:2px solid #e8d8ad;padding:0 0 14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
+      .brand{font-size:22px;font-weight:800;color:#123f78;letter-spacing:.02em}.sub{font-size:11px;color:#708096;margin-top:3px}
+      h1{font-size:21px;margin:0 0 4px;color:#143c70}.muted{color:#748298;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+      .box{border:1px solid #e1e8ef;border-radius:10px;padding:10px 12px;background:#fbfcfe}.box b{color:#183d6e}.box span{display:block;font-size:11px;color:#7b8798;margin-bottom:3px}.box strong{font-size:13px;color:#1d2d43}
+      .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.summary .box{text-align:left}.summary .value{font-size:18px;font-weight:800;color:#123f78}
+      table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f4f7fb;color:#5d6d82;text-align:left;padding:8px;border-bottom:1px solid #dfe7ef}td{padding:8px;border-bottom:1px solid #e8edf3;color:#2b3a4d}
+      .status{font-weight:700}.status.paid{color:#4f8b68}.status.pending{color:#ad7a25}.status.overdue{color:#b76060}
+      .footer{margin-top:22px;padding-top:10px;border-top:1px solid #e4e9ef;font-size:10px;color:#8591a1}
+      @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+    </style></head><body>
+    <div class="header"><div><div class="brand">SAKTHI PROPERTY</div><div class="sub">Property &amp; Facility Management</div></div><div class="muted">Rent History Report</div></div>
+    <h1>${tenant.fullName}</h1><div class="muted">Generated on ${formatDate(new Date())}</div>
+    <div class="meta" style="margin-top:14px">
+      <div class="box"><span>Property</span><strong>${property?.name || '—'}</strong></div>
+      <div class="box"><span>Property type</span><strong>${property?.type || '—'}</strong></div>
+      <div class="box"><span>Tenant phone</span><strong>${tenant.phone || '—'}</strong></div>
+      <div class="box"><span>Tenancy period</span><strong>${formatDate(tenant.dateOfComing)} - ${formatDate(tenant.dateOfLeaving)}</strong></div>
+      <div class="box"><span>Tenant status</span><strong>${tenant.status || 'Active'}</strong></div>
+      <div class="box"><span>Owner</span><strong>${property?.ownerName || '—'}</strong></div>
+    </div>
+    <div class="summary">
+      <div class="box"><span>Total recorded rent</span><div class="value">${formatCurrency(total)}</div></div>
+      <div class="box"><span>Rent paid</span><div class="value">${formatCurrency(paid)}</div></div>
+      <div class="box"><span>Outstanding</span><div class="value">${formatCurrency(pending)}</div></div>
+    </div>
+    <table><thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Paid on</th><th>Due date</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No rent history recorded.</td></tr>'}</tbody></table>
+    <div class="footer">Sakthi Property - Tenant rent history. This report contains the rent records currently stored in the application.</div>
+    <script>window.onload=function(){setTimeout(function(){window.print()},250)};<\/script>
+    </body></html>`);
+    win.document.close();
+    return;
+  }
+
+  const safeName = String(tenant.fullName || 'tenant').replace(/[^a-zA-Z0-9-_ ]/g, '').trim() || 'tenant';
+  const rows = history.map((r) => ({
+    month: r.month || '',
+    year: r.year || '',
+    amount: Number(r.amount || 0),
+    status: r.status || 'Pending',
+    paidDate: r.paidDate || '',
+    dueDate: r.dueDate || '',
+  }));
+
+  if (format === 'csv') {
+    const headers = ['Month', 'Year', 'Amount', 'Status', 'Paid on', 'Due date'];
+    const csv = [headers.join(','), ...rows.map((r) => headers.map((h) => {
+      const key = { Month: 'month', Year: 'year', Amount: 'amount', Status: 'status', 'Paid on': 'paidDate', 'Due date': 'dueDate' }[h];
+      const value = r[key] ?? '';
+      return `"${String(value).replace(/"/g, '""')}"`;
+    }).join(','))].join('\n');
+    downloadTextFile(`${safeName}-rent-history.csv`, csv, 'text/csv');
+    return;
+  }
+
+  if (format === 'json') {
+    const payload = {
+      tenant: { fullName: tenant.fullName, phone: tenant.phone, status: tenant.status, property: property?.name || '', owner: property?.ownerName || '' },
+      history: rows,
+    };
+    downloadTextFile(`${safeName}-rent-history.json`, JSON.stringify(payload, null, 2), 'application/json');
+    return;
+  }
+
+  const text = [
+    `Tenant: ${tenant.fullName}`,
+    `Phone: ${tenant.phone || '—'}`,
+    `Property: ${property?.name || '—'}`,
+    '',
+    'Month | Year | Amount | Status | Paid on | Due date',
+    ...rows.map((r) => `${r.month} | ${r.year} | ${formatCurrency(r.amount)} | ${r.status} | ${r.paidDate || '—'} | ${r.dueDate || '—'}`),
+  ].join('\n');
+  downloadTextFile(`${safeName}-rent-history.txt`, text, 'text/plain');
+}
+
+function downloadRentHistoryPDF(tenant, property) {
+  downloadRentHistoryFile(tenant, property, 'pdf');
 }
 
 function DocumentViewer({ documentRecord, title, onClose }) {
@@ -437,7 +484,7 @@ function Sidebar({ page, setPage, unreadCount, onLogout }) {
     <aside className="sidebar">
       <div className="brand">
         <div className="brand-mark"><Icon name="home" size={24} /></div>
-        <div className="brand-copy"><strong>SAKTHI</strong><span>CONSTRUCTION</span><small>Property &amp; Facility Management</small></div>
+        <div className="brand-copy"><strong>SAKTHI</strong><span>PROPERTY</span><small>Property &amp; Facility Management</small></div>
       </div>
       <nav className="nav" aria-label="Primary navigation">
         {NAV_ITEMS.map((it) => (
@@ -466,7 +513,7 @@ function Topbar({ notifications, unreadCount, notifOpen, setNotifOpen, onMarkRea
   return (
     <header className="topbar topbar-no-search">
       <div className="topbar-context">
-        <span className="topbar-label">Sakthi Construction</span>
+        <span className="topbar-label">Sakthi Property</span>
       </div>
       <div className="topbar-right">
         <div className="notif-wrap" ref={notifRef}>
@@ -618,9 +665,19 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
     return base;
   });
   const [landmarkDraft, setLandmarkDraft] = useState({ name: '', distance: '', type: '' });
+  const [amenityDraft, setAmenityDraft] = useState('');
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); }
   function toggleAmenity(a) { setForm((f) => ({ ...f, amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a] })); }
+  function addAmenity() {
+    const value = amenityDraft.trim();
+    if (!value) return;
+    setForm((f) => ({
+      ...f,
+      amenities: f.amenities.includes(value) ? f.amenities : [...f.amenities, value],
+    }));
+    setAmenityDraft('');
+  }
   function addLandmark() { if (!landmarkDraft.name) return; setForm((f) => ({ ...f, landmarks: [...f.landmarks, landmarkDraft] })); setLandmarkDraft({ name: '', distance: '', type: '' }); }
   function removeLandmark(i) { setForm((f) => ({ ...f, landmarks: f.landmarks.filter((_, idx) => idx !== i) })); }
 
@@ -661,8 +718,6 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
           <label>State<input value={form.state} onChange={(e) => set('state', e.target.value)} /></label>
           <label>City<input value={form.city} onChange={(e) => set('city', e.target.value)} /></label>
           <label>Pin code<input value={form.pincode} onChange={(e) => set('pincode', e.target.value)} /></label>
-          <label>Latitude<input value={form.lat} onChange={(e) => set('lat', e.target.value)} /></label>
-          <label>Longitude<input value={form.lng} onChange={(e) => set('lng', e.target.value)} /></label>
         </div>
       </div>
 
@@ -696,11 +751,22 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
       {form.mode === 'building' && (
         <div className="form-section">
           <h4>Amenities</h4>
+          <div className="form-grid">
+            <label>Custom amenity<input value={amenityDraft} onChange={(e) => setAmenityDraft(e.target.value)} placeholder="e.g. Rooftop deck" /></label>
+          </div>
+          <button type="button" className="btn btn-outline btn-sm" onClick={addAmenity}><Icon name="plus" size={14} /> Add amenity</button>
           <div className="checkbox-grid">
             {AMENITIES_LIST.map((a) => (
               <label key={a} className="checkbox"><input type="checkbox" checked={form.amenities.includes(a)} onChange={() => toggleAmenity(a)} /> {a}</label>
             ))}
           </div>
+          {form.amenities.length > 0 && (
+            <ul className="chip-list">
+              {form.amenities.map((a, i) => (
+                <li key={`${a}-${i}`} className="chip">{a}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -860,21 +926,25 @@ function TenantForm({ initial, properties, onSave, onCancel, pushToast }) {
 /* =========================================================
    DASHBOARD PAGE
    ========================================================= */
-function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
+export function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
+  const now = new Date();
   const stats = useMemo(() => {
     const total = properties.length;
     const occupied = properties.filter((p) => p.status === 'Occupied').length;
     const available = properties.filter((p) => p.status === 'Available').length;
     const totalUnits = properties.reduce((s, p) => s + (Number(p.flatsCount) || 1), 0);
     const totalTenants = tenants.filter((t) => t.status !== 'Archived').length;
-    const rentCollected = tenants.reduce((s, t) => s + (t.rentHistory || []).filter((r) => r.status === 'Paid').reduce((a, r) => a + Number(r.amount || 0), 0), 0);
-    const rentOverdue = tenants.reduce((s, t) => s + (t.rentHistory || []).filter((r) => r.status === 'Overdue').reduce((a, r) => a + Number(r.amount || 0), 0), 0);
-    const rentPending = tenants.reduce((s, t) => s + (t.rentHistory || []).filter((r) => r.status !== 'Paid' && r.status !== 'Overdue').reduce((a, r) => a + Number(r.amount || 0), 0), 0);
+    const currentMonth = MONTHS[now.getMonth()];
+    const currentYear = now.getFullYear();
+    const currentRentRecords = tenants.flatMap((tenant) => (tenant.rentHistory || []).filter((record) => record.month === currentMonth && Number(record.year) === currentYear));
+    const rentCollected = currentRentRecords.filter((record) => record.status === 'Paid').reduce((sum, record) => sum + Number(record.amount || 0), 0);
+    const rentOverdue = currentRentRecords.filter((record) => record.status === 'Overdue').reduce((sum, record) => sum + Number(record.amount || 0), 0);
+    const rentPending = currentRentRecords.filter((record) => record.status !== 'Paid' && record.status !== 'Overdue').reduce((sum, record) => sum + Number(record.amount || 0), 0);
+    const overdueTenants = tenants.filter((tenant) => (tenant.rentHistory || []).some((record) => record.month === currentMonth && Number(record.year) === currentYear && record.status === 'Overdue')).length;
     const electricity = bills.reduce((s, b) => s + Number(b.amount || 0), 0);
-    return { total, occupied, available, totalUnits, totalTenants, rentCollected, rentPending, rentOverdue, electricity };
-  }, [properties, tenants, bills]);
+    return { total, occupied, available, totalUnits, totalTenants, rentCollected, rentPending, rentOverdue, overdueTenants, electricity };
+  }, [properties, tenants, bills, now.getMonth(), now.getFullYear()]);
 
-  const now = new Date();
   const barData = useMemo(() => {
     const months = [];
     for (let i = 5; i >= 0; i--) {
@@ -882,7 +952,7 @@ function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
       const name = MONTHS[d.getMonth()];
       let expected = 0, collected = 0;
       tenants.forEach((t) => (t.rentHistory || []).forEach((r) => {
-        if (r.month === name) {
+        if (r.month === name && Number(r.year) === d.getFullYear()) {
           const amount = Number(r.amount || 0);
           if (r.status === 'Paid') collected += amount; else expected += amount;
         }
@@ -890,7 +960,7 @@ function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
       months.push({ label: name.slice(0, 3), expected, collected });
     }
     return months;
-  }, [tenants]);
+  }, [tenants, now.getMonth(), now.getFullYear()]);
 
   const propertyTypes = [
     { label: 'Houses', value: properties.filter(p => p.type === 'House').length, color: '#214a91' },
@@ -919,14 +989,14 @@ function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
       </div>
 
       <div className="reference-stats">
-        <StatCard icon="building" label="Total Properties" value={stats.total} sub={stats.total ? `${stats.total} properties on record` : 'No properties yet'} tone="gold" />
-        <StatCard icon="users" label="Occupied Properties" value={stats.occupied} sub={stats.total ? `${Math.round(stats.occupied / stats.total * 100)}% occupancy` : '0% occupancy'} tone="green" />
-        <StatCard icon="home" label="Vacant Properties" value={stats.available} sub={stats.total ? `${Math.round(stats.available / stats.total * 100)}% vacant` : '0% vacant'} tone="purple" />
-        <StatCard icon="users" label="Total Tenants" value={stats.totalTenants} sub="Active tenants" tone="blue" />
-        <StatCard icon="cash" label="Expected Rent" value={formatCurrency(stats.rentCollected + stats.rentPending + stats.rentOverdue)} sub="This month" tone="purple" />
-        <StatCard icon="check" label="Rent Collected" value={formatCurrency(stats.rentCollected)} sub={stats.rentCollected + stats.rentPending + stats.rentOverdue ? `${Math.round(stats.rentCollected/(stats.rentCollected+stats.rentPending+stats.rentOverdue)*100)}% of expected` : '0% of expected'} tone="green" />
+        <StatCard onClick={() => setPage('properties')} icon="building" label="Total Properties" value={stats.total} sub={stats.total ? `${stats.total} properties on record` : 'No properties yet'} tone="gold" />
+        <StatCard onClick={() => setPage('properties')} icon="users" label="Occupied Properties" value={stats.occupied} sub={stats.total ? `${Math.round(stats.occupied / stats.total * 100)}% occupancy` : '0% occupancy'} tone="green" />
+        <StatCard onClick={() => setPage('properties')} icon="home" label="Vacant Properties" value={stats.available} sub={stats.total ? `${Math.round(stats.available / stats.total * 100)}% vacant` : '0% vacant'} tone="purple" />
+        <StatCard onClick={() => setPage('tenants')} icon="users" label="Total Tenants" value={stats.totalTenants} sub="Active tenants" tone="blue" />
+        <StatCard onClick={() => setPage('rent')} icon="cash" label="Expected Rent" value={formatCurrency(stats.rentCollected + stats.rentPending + stats.rentOverdue)} sub="This month" tone="purple" />
+        <StatCard onClick={() => setPage('rent')} icon="check" label="Rent Collected" value={formatCurrency(stats.rentCollected)} sub={stats.rentCollected + stats.rentPending + stats.rentOverdue ? `${Math.round(stats.rentCollected/(stats.rentCollected+stats.rentPending+stats.rentOverdue)*100)}% of expected` : '0% of expected'} tone="green" />
         <StatCard onClick={() => setPage('rent')} icon="cash" label="Rent Pending" value={formatCurrency(stats.rentPending)} sub={stats.rentCollected + stats.rentPending + stats.rentOverdue ? `${Math.round(stats.rentPending/(stats.rentCollected+stats.rentPending+stats.rentOverdue)*100)}% of expected` : '0% of expected'} tone="gold" />
-        <StatCard onClick={() => setPage('rent')} icon="alert" label="Overdue Rent" value={formatCurrency(stats.rentOverdue)} sub={`${tenants.filter(t => (t.rentHistory || []).some(r => r.status === 'Overdue')).length} tenants`} tone="red" />
+        <StatCard onClick={() => setPage('rent')} icon="alert" label="Overdue Rent" value={formatCurrency(stats.rentOverdue)} sub={`${stats.overdueTenants} tenants`} tone="red" />
       </div>
 
       <div className="dashboard-grid-three">
@@ -966,7 +1036,7 @@ function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
               <span className="quick-action-label">Record Rent</span>
               <span className="quick-action-arrow">→</span>
             </button>
-            <button title="Tenant Messages" onClick={()=>setPage('tenants')}>
+            <button title="Tenant Messages" onClick={()=>setPage('whatsapp')}>
               <span className="quick-action-icon"><Icon name="phone"/></span>
               <span className="quick-action-label">Tenant Messages</span>
               <span className="quick-action-arrow">→</span>
@@ -1195,7 +1265,12 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
         <Modal title={`Rent history — ${historyOf.fullName}`} onClose={() => setHistoryOf(null)}>
           <div className="rent-history-toolbar">
             <span className="muted">All recorded rent transactions for this tenant.</span>
-            <button className="btn btn-outline btn-sm" onClick={() => downloadRentHistoryPDF(historyOf, properties.find((p) => p.id === historyOf.propertyId))}><Icon name="download" size={14}/> PDF</button>
+            <div className="download-format-row">
+              <button className="btn btn-outline btn-sm" onClick={() => downloadRentHistoryFile(historyOf, properties.find((p) => p.id === historyOf.propertyId), 'pdf')}><Icon name="download" size={14}/> PDF</button>
+              <button className="btn btn-outline btn-sm" onClick={() => downloadRentHistoryFile(historyOf, properties.find((p) => p.id === historyOf.propertyId), 'csv')}><Icon name="download" size={14}/> CSV</button>
+              <button className="btn btn-outline btn-sm" onClick={() => downloadRentHistoryFile(historyOf, properties.find((p) => p.id === historyOf.propertyId), 'json')}><Icon name="download" size={14}/> JSON</button>
+              <button className="btn btn-outline btn-sm" onClick={() => downloadRentHistoryFile(historyOf, properties.find((p) => p.id === historyOf.propertyId), 'txt')}><Icon name="download" size={14}/> TXT</button>
+            </div>
           </div>
           <div className="table-wrap">
             <table>
@@ -1216,7 +1291,7 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
             <span>Maintenance fee: <b>{formatCurrency(historyOf.maintenanceFee)}</b></span>
           </div>
           <div className="modal-footer-inline">
-            <button className="btn btn-primary" onClick={() => downloadRentHistoryPDF(historyOf, properties.find((p) => p.id === historyOf.propertyId))}><Icon name="download" size={15}/> Save rent history as PDF</button>
+            <button className="btn btn-primary" onClick={() => downloadRentHistoryFile(historyOf, properties.find((p) => p.id === historyOf.propertyId), 'pdf')}><Icon name="download" size={15}/> Save rent history as PDF</button>
           </div>
         </Modal>
       )}
@@ -1233,6 +1308,8 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
    RENT PAGE
    ========================================================= */
 function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onBack }) {
+  const [tenantQuery, setTenantQuery] = useState('');
+  const [historyOf, setHistoryOf] = useState(null);
   const [monthFilter, setMonthFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [buildingFilter, setBuildingFilter] = useState('All');
@@ -1246,13 +1323,14 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onB
     if (!showPrevious && t.status === 'Archived') return;
     if (showPrevious && t.status !== 'Archived') return;
     if (!(t.rentHistory || []).length) {
-      rows.push({ tenantId: t.id, tenantName: t.fullName, propertyId: t.propertyId, idx: -1, month: currentMonth, year: currentYear, amount: Number(t.rentAmount || 0), status: 'Pending' });
+      rows.push({ tenantId: t.id, tenantName: t.fullName, tenantPhone: t.phone, propertyId: t.propertyId, idx: -1, month: currentMonth, year: currentYear, amount: Number(t.rentAmount || 0), status: 'Pending' });
     } else {
-      (t.rentHistory || []).forEach((r, idx) => rows.push({ tenantId: t.id, tenantName: t.fullName, propertyId: t.propertyId, idx, ...r, tenantStatus: t.status }));
+      (t.rentHistory || []).forEach((r, idx) => rows.push({ tenantId: t.id, tenantName: t.fullName, tenantPhone: t.phone, propertyId: t.propertyId, idx, ...r, tenantStatus: t.status }));
     }
   });
 
   const filtered = rows.filter((r) =>
+    (!tenantQuery.trim() || String(r.tenantName || '').toLowerCase().includes(tenantQuery.trim().toLowerCase()) || String(r.tenantPhone || '').toLowerCase().includes(tenantQuery.trim().toLowerCase())) &&
     (monthFilter === 'All' || r.month === monthFilter) &&
     (statusFilter === 'All' || r.status === statusFilter) &&
     (buildingFilter === 'All' || r.propertyId === buildingFilter)
@@ -1267,6 +1345,7 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onB
         </div>
       </div>
       <div className="toolbar rent-toolbar">
+        <div className="search-box"><Icon name="search" size={16} /><input aria-label="Search rent by tenant name or phone" placeholder="Search tenant by name or phone" value={tenantQuery} onChange={(e) => setTenantQuery(e.target.value)} /></div>
         <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}><option>All</option>{MONTHS.map((m) => <option key={m}>{m}</option>)}</select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option>All</option><option>Paid</option><option>Pending</option><option>Overdue</option></select>
         <select value={buildingFilter} onChange={(e) => setBuildingFilter(e.target.value)}><option value="All">All buildings</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
@@ -1282,7 +1361,7 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onB
               const tenant = tenants.find((t) => t.id === r.tenantId);
               const property = properties.find((p) => p.id === r.propertyId);
               return <tr key={`${r.tenantId}-${r.idx}-${i}`}>
-                <td><div className="rent-tenant-cell"><strong>{r.tenantName}</strong>{showPrevious && <span className="muted small">Previous tenant</span>}</div></td>
+                <td><div className="rent-tenant-cell"><button type="button" className="link-btn" aria-label={`View rent history for ${r.tenantName}`} onClick={() => setHistoryOf(tenant)}>{r.tenantName}</button>{showPrevious && <span className="muted small">Previous tenant</span>}</div></td>
                 <td>{getPropertyName(properties, r.propertyId)}</td><td>{r.month} {r.year}</td><td>{formatCurrency(r.amount)}</td>
                 <td><Badge text={r.status} tone={r.status === 'Paid' ? 'success' : r.status === 'Overdue' ? 'danger' : 'warning'} /></td>
                 <td className="row-actions rent-row-actions">
@@ -1295,6 +1374,36 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onB
           </tbody>
         </table>
       </div>
+      {historyOf && (
+        <Modal title={`Rent history — ${historyOf.fullName}`} onClose={() => setHistoryOf(null)} wide>
+          <div className="rent-history-toolbar">
+            <span className="muted">All recorded rent transactions for this tenant.</span>
+            <div className="download-format-row">
+              {['pdf', 'csv', 'json', 'txt'].map((format) => (
+                <button key={format} className="btn btn-outline btn-sm" onClick={() => downloadRentHistoryFile(historyOf, properties.find((p) => p.id === historyOf.propertyId), format)}>
+                  <Icon name="download" size={14} /> {format.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Paid on</th></tr></thead>
+              <tbody>
+                {(historyOf.rentHistory || []).map((record, index) => (
+                  <tr key={`${record.year}-${record.month}-${index}`}>
+                    <td>{record.month} {record.year}</td>
+                    <td>{formatCurrency(record.amount)}</td>
+                    <td><Badge text={record.status} tone={record.status === 'Paid' ? 'success' : record.status === 'Overdue' ? 'danger' : 'warning'} /></td>
+                    <td>{record.paidDate ? formatDate(record.paidDate) : '—'}</td>
+                  </tr>
+                ))}
+                {(!historyOf.rentHistory || historyOf.rentHistory.length === 0) && <tr><td colSpan="4"><EmptyState text="No rent history yet" /></td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -1804,15 +1913,15 @@ function buildWhatsAppDirectoryMessage({ tenants = [], properties = [], managers
     name: adminProfile?.name || 'Administrator',
     phone: adminProfile?.phone,
     type: 'Admin',
-    property: 'Sakthi Construction',
+    property: 'Sakthi Property',
   });
 
   if (!contacts.length) {
-    return 'SAKTHI CONSTRUCTION\n\nNo saved phone numbers are available yet.';
+    return 'SAKTHI PROPERTY\n\nNo saved phone numbers are available yet.';
   }
 
   const lines = [
-    'SAKTHI CONSTRUCTION — CONTACT DIRECTORY',
+    'SAKTHI PROPERTY — CONTACT DIRECTORY',
     '',
     ...contacts.map((contact, index) => [
       `${index + 1}. ${contact.name}`,
@@ -1875,7 +1984,7 @@ function WhatsAppPage({ tenants, properties, managers, adminProfile, setPage }) 
       name: adminProfile?.name || 'Administrator',
       phone: adminProfile?.phone,
       type: 'Admin',
-      property: 'Sakthi Construction',
+      property: 'Sakthi Property',
     });
 
     return list;
@@ -2027,7 +2136,7 @@ export default function App() {
       }
       return { ...t, rentHistory: history };
     }));
-    const message = `Hello ${tenant.fullName}, your rent of ${formatCurrency(paidAmount)} for ${paidMonth} has been marked as paid. Thank you - Sakthi Construction.`;
+    const message = `Hello ${tenant.fullName}, your rent of ${formatCurrency(paidAmount)} for ${paidMonth} has been marked as paid. Thank you - Sakthi Property.`;
     pushNotification(`Rent paid: ${tenant.fullName} - ${formatCurrency(paidAmount)} for ${paidMonth}`, 'send');
     openWhatsAppForTenant(tenant, message);
   }

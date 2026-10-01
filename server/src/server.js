@@ -38,7 +38,7 @@ app.get("/api/health", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Sakthi Construction API is connected",
+      message: "Sakthi Property API is connected",
       database: "connected",
     });
   } catch (error) {
@@ -161,10 +161,10 @@ app.post("/api/properties", async (req, res) => {
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Sakthi Construction backend is running",
+    message: "Sakthi Property backend is running",
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Sakthi Construction API running on port ${PORT}`);
+  console.log(`Sakthi Property API running on port ${PORT}`);
 });

@@ -14,7 +14,7 @@ const RESET_MINUTES = 10;
 const AUTH_SECRET = process.env.AUTH_SECRET;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const MAIL_FROM =
-  process.env.MAIL_FROM || "Sakthi Construction <onboarding@resend.dev>";
+  process.env.MAIL_FROM || "Sakthi Property <onboarding@resend.dev>";
 
 if (!AUTH_SECRET) {
   throw new Error("AUTH_SECRET is missing in server/.env");
@@ -564,9 +564,9 @@ export function registerAuth(app, prisma) {
         await resend.emails.send({
           from: MAIL_FROM,
           to: [admin.email],
-          subject: "Sakthi Construction - Password Reset Code",
+          subject: "Sakthi Property - Password Reset Code",
           text:
-            `Your Sakthi Construction password reset code is ${code}.\n\n` +
+            `Your Sakthi Property password reset code is ${code}.\n\n` +
             `This code expires in ${RESET_MINUTES} minutes.\n\n` +
             `If you did not request this, ignore this email.`,
         });
