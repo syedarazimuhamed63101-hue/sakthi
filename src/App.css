@@ -7020,3 +7020,308 @@ a,
   .document-manager-actions{width:100%;justify-content:flex-end;}
   .document-manager-info strong{max-width:calc(100vw - 120px);}
 }
+
+/* ---- Google sign-in (Supabase) ---- */
+.auth-alt{display:flex;flex-direction:column;gap:14px;margin-top:16px;}
+.auth-google{
+  min-height:50px;
+  border:1px solid #d7dee8;
+  border-radius:12px;
+  background:#fff;
+  color:#1f2d45;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .15s,border-color .15s,box-shadow .15s;
+}
+.auth-google:hover{background:#f7f9fc;border-color:#b9c6d8;box-shadow:0 4px 12px rgba(18,63,120,.08);}
+.auth-google:disabled{opacity:.62;cursor:not-allowed;}
+
+
+/* =========================================================
+   FRONTEND-ONLY / WHATSAPP CONTACTS
+   ========================================================= */
+.back-button{margin-bottom:14px;display:inline-flex;align-items:center;gap:7px}
+.page-title-row{display:flex;align-items:center;gap:12px}
+.page-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#fff8e8;color:#b4862b;border:1px solid #ead9aa}
+.whatsapp-page-icon{background:#eef7f1;color:#2c8a5c;border-color:#cfe7d8}
+.whatsapp-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0}
+.whatsapp-search{max-width:520px;flex:1}
+.whatsapp-count{font-size:13px;color:#687991;font-weight:700}
+.whatsapp-list{display:flex;flex-direction:column;gap:10px}
+.whatsapp-contact-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #e3e8ef;border-radius:14px;background:#fff;box-shadow:0 8px 22px rgba(32,56,88,.05)}
+.whatsapp-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#f2f6fb;color:#315f95;flex:0 0 auto}
+.whatsapp-contact-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.whatsapp-contact-main strong{font-size:15px;color:#17365f}
+.whatsapp-contact-main span{font-size:13px;color:#34465d}
+.whatsapp-contact-main small{font-size:11px;color:#8290a3}
+.btn-whatsapp{background:#2c8a5c;color:#fff;border-color:#2c8a5c;display:inline-flex;align-items:center;gap:7px}
+.btn-whatsapp:hover{background:#24764f;border-color:#24764f;color:#fff}
+.whatsapp-empty{padding:50px 20px}
+.floating-whatsapp{position:fixed;right:24px;bottom:24px;z-index:80;border:0;border-radius:999px;background:#2c8a5c;color:#fff;display:flex;align-items:center;gap:9px;padding:13px 17px;box-shadow:0 14px 34px rgba(44,138,92,.28);cursor:pointer;font-weight:800;font-size:13px;transition:transform .16s ease,box-shadow .16s ease}
+.floating-whatsapp:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(44,138,92,.34)}
+@media (max-width:700px){
+  .whatsapp-contact-card{align-items:flex-start;flex-wrap:wrap}
+  .btn-whatsapp{width:100%;justify-content:center}
+  .floating-whatsapp{right:14px;bottom:14px;padding:12px 14px}
+  .whatsapp-toolbar{align-items:stretch;flex-direction:column}
+}
+
+
+/* =========================================================
+   FINAL UI TUNING — larger readable type, single search control,
+   clearer notifications, no dashboard clock icon, direct WhatsApp.
+   ========================================================= */
+
+/* One clean top bar without the duplicate global search. */
+.topbar-no-search{
+  justify-content:space-between;
+}
+.topbar-context{
+  display:flex;
+  align-items:center;
+  min-width:220px;
+}
+.topbar-label{
+  font-size:1rem;
+  font-weight:800;
+  color:#1f3d69;
+  letter-spacing:-.01em;
+}
+
+/* Section typography: readable without looking oversized. */
+.page-title-row h2,
+.page-header h2{
+  font-size:1.55rem;
+  line-height:1.2;
+}
+.page-title-row p,
+.page-header p,
+.panel-title p{
+  font-size:.95rem;
+  line-height:1.45;
+}
+.page-header{
+  margin-bottom:18px;
+}
+.page-header h2,
+.panel-title h3,
+.form-section h4,
+.detail-card h4,
+.settings-panel h4{
+  letter-spacing:-.01em;
+}
+
+/* Search controls are consistent and comfortably tappable. */
+.search-box,
+.property-picker-search,
+.whatsapp-search{
+  min-height:46px;
+  height:46px;
+}
+.search-box input,
+.property-picker-search input,
+.whatsapp-search input{
+  min-height:44px;
+  font-size:.96rem !important;
+  line-height:1.3;
+}
+.search-box svg{
+  width:18px;
+  height:18px;
+  flex:0 0 auto;
+}
+.toolbar{
+  gap:12px;
+  margin-bottom:18px;
+}
+.toolbar select{
+  min-height:46px;
+  font-size:.95rem;
+}
+
+/* Keep property assignment to one live search field. */
+.property-search-row{
+  width:100%;
+}
+.property-picker-search{
+  width:100%;
+  max-width:none;
+}
+
+/* Bigger, clearer forms across every section. */
+.form-grid{
+  gap:16px 18px;
+}
+.form-grid label{
+  font-size:.92rem;
+  gap:7px;
+  color:#42536a;
+}
+.form-grid input,
+.form-grid select,
+.form-grid textarea,
+.form-inline input,
+.form-inline select{
+  min-height:44px;
+  padding:10px 12px;
+  font-size:.95rem;
+}
+.form-grid textarea{
+  min-height:92px;
+}
+.form-section h4{
+  font-size:1.05rem;
+}
+.form-actions .btn,
+.toolbar .btn,
+.page-header .btn{
+  min-height:42px;
+  font-size:.9rem;
+}
+
+/* Dashboard notification dropdown: make text easy to read. */
+.dropdown-panel .dropdown-head{
+  font-size:.95rem;
+  font-weight:800;
+}
+.dropdown-panel .notif-item{
+  padding:12px 14px;
+  gap:11px;
+}
+.dropdown-panel .notif-item p{
+  font-size:.92rem !important;
+  line-height:1.45;
+  color:#24364f;
+  margin:0 0 4px;
+  font-weight:600;
+}
+.dropdown-panel .notif-item span,
+.dropdown-panel .notif-item .small{
+  font-size:.78rem !important;
+  line-height:1.35;
+}
+.dropdown-panel .dropdown-footer,
+.dropdown-panel .link-btn{
+  font-size:.86rem;
+}
+
+/* Notifications page uses the same readable scale. */
+.page-notif-list .notif-item{
+  padding:14px 16px;
+  gap:12px;
+}
+.page-notif-list .notif-item p{
+  font-size:.96rem;
+  line-height:1.5;
+}
+.page-notif-list .notif-item span{
+  font-size:.8rem;
+}
+
+/* Dashboard cards and activity text. */
+.dashboard-topline h1{
+  font-size:1.7rem;
+}
+.dashboard-topline p,
+.reference-activity b,
+.reference-activity span,
+.quick-action-label,
+.panel-title h3{
+  font-size:.95rem;
+}
+.stat-label{
+  font-size:.78rem;
+}
+.stat-value{
+  font-size:1.28rem;
+}
+.stat-sub{
+  font-size:.76rem;
+}
+.reference-legend div,
+.reference-activity small{
+  font-size:.86rem;
+}
+
+/* No clock icon in dashboard's date control. */
+.today-btn{
+  gap:10px;
+  font-size:.9rem;
+  min-height:42px;
+}
+
+/* WhatsApp button remains the one intentional green accent. */
+.floating-whatsapp{
+  min-height:50px;
+  padding:13px 19px;
+  font-size:.92rem;
+}
+.whatsapp-page h2{
+  font-size:1.55rem;
+}
+.whatsapp-page .muted{
+  font-size:.92rem;
+}
+.whatsapp-contact-main strong{
+  font-size:1rem;
+}
+.whatsapp-contact-main span{
+  font-size:.92rem;
+}
+.whatsapp-contact-main small{
+  font-size:.82rem;
+}
+.btn-whatsapp{
+  min-height:42px;
+  font-size:.88rem;
+}
+
+@media (max-width:760px){
+  .topbar-context{
+    min-width:0;
+  }
+  .topbar-label{
+    font-size:.9rem;
+  }
+  .page-header h2,
+  .page-title-row h2,
+  .whatsapp-page h2{
+    font-size:1.3rem;
+  }
+  .dashboard-topline h1{
+    font-size:1.45rem;
+  }
+  .search-box,
+  .property-picker-search,
+  .whatsapp-search{
+    min-height:44px;
+    height:44px;
+  }
+}
+
+
+/* Final readability pass across all sections */
+table th{font-size:.78rem;line-height:1.3;white-space:nowrap;}
+table td{font-size:.88rem;line-height:1.45;}
+.badge{font-size:.72rem;}
+.link-btn{font-size:.86rem;}
+.small{font-size:.82rem;}
+.muted.small{font-size:.8rem;}
+.btn-sm{min-height:38px;font-size:.84rem;padding:8px 13px;}
+.btn-xs{min-height:34px;font-size:.8rem;padding:7px 11px;}
+.page .toolbar .search-box{flex:1;min-width:260px;max-width:720px;}
+.page .toolbar .search-box input{width:100%;}
+
+
+/* Clickable dashboard rent cards */
+.stat-card-clickable { cursor: pointer; }
+.stat-card-clickable:focus-visible { outline: 2px solid #214a91; outline-offset: 2px; }
+.rent-legend-clickable { cursor: pointer; }
+.rent-legend-clickable:hover { background: rgba(224, 168, 59, 0.08); border-radius: 8px; }
+
+.page-header-left{display:flex;align-items:center;gap:12px;min-width:0}.page-header-left .back-button{margin-bottom:0;flex:0 0 auto}.page-header-left>h2{margin:0}.page-header-left>div:not(.back-button){min-width:0}

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import './App.css';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 /* =========================================================
    ICONS — small inline SVG set, no external icon library
@@ -302,9 +301,9 @@ function Badge({ text, tone = 'default' }) {
   return <span className={`badge badge-${tone}`}>{text}</span>;
 }
 
-function StatCard({ icon, label, value, sub, tone = 'default' }) {
+function StatCard({ icon, label, value, sub, tone = 'default', onClick }) {
   return (
-    <div className={`stat-card tone-${tone}`}>
+    <div className={`stat-card tone-${tone} ${onClick ? 'stat-card-clickable' : ''}`} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}>
       <div className="stat-icon"><Icon name={icon} size={22} /></div>
       <div className="stat-info">
         <span className="stat-label">{label}</span>
@@ -422,7 +421,6 @@ const NAV_ITEMS = [
   { key: 'rent', label: 'Rent', icon: 'cash' },
   { key: 'bills', label: 'Bills', icon: 'bolt' },
   { key: 'maintenance', label: 'Maintenance', icon: 'wrench' },
-  { key: 'storage', label: 'Storage', icon: 'box' },
   { key: 'reports', label: 'Reports', icon: 'chart' },
   { key: 'notifications', label: 'Notifications', icon: 'bell' },
   { key: 'settings', label: 'Settings', icon: 'settings' },
@@ -431,7 +429,7 @@ const NAV_ITEMS = [
 function Sidebar({ page, setPage, unreadCount, onLogout }) {
   const labels = {
     dashboard: 'Dashboard', properties: 'Properties', tenants: 'Tenants', rent: 'Rent Management',
-    bills: 'Bills', maintenance: 'Maintenance', storage: 'Storage', reports: 'Reports',
+    bills: 'Bills', maintenance: 'Maintenance', reports: 'Reports',
     notifications: 'Notifications', settings: 'Settings'
   };
   const icons = { ...Object.fromEntries(NAV_ITEMS.map((it) => [it.key, it.icon])) };
@@ -459,30 +457,16 @@ function Sidebar({ page, setPage, unreadCount, onLogout }) {
   );
 }
 
-function Topbar({ query, setQuery, searchResults, onNavigate, notifications, unreadCount, notifOpen, setNotifOpen, onMarkRead, onMarkAllRead, profileOpen, setProfileOpen, user, onLogout }) {
+function Topbar({ notifications, unreadCount, notifOpen, setNotifOpen, onMarkRead, onMarkAllRead, profileOpen, setProfileOpen, user, onLogout, onNavigate }) {
   const notifRef = useRef(null);
   const profileRef = useRef(null);
-  const searchRef = useRef(null);
-  const [searchOpen, setSearchOpen] = useState(false);
   useOutsideClick(notifRef, () => setNotifOpen(false));
   useOutsideClick(profileRef, () => setProfileOpen(false));
-  useOutsideClick(searchRef, () => setSearchOpen(false));
 
   return (
-    <header className="topbar">
-      <div className="search-box wide" ref={searchRef}>
-        <input placeholder="Search properties or tenants..." value={query}
-          onChange={(e) => { setQuery(e.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} />
-        {searchOpen && query && (
-          <div className="search-dropdown">
-            {searchResults.length === 0 && <div className="search-empty">No matches</div>}
-            {searchResults.map((r) => (
-              <div key={r.key} className="search-result" onClick={() => { onNavigate(r.page); setSearchOpen(false); }}>
-                <Icon name={r.icon} size={14} /> <span>{r.label}</span><Badge text={r.tag} tone="info" />
-              </div>
-            ))}
-          </div>
-        )}
+    <header className="topbar topbar-no-search">
+      <div className="topbar-context">
+        <span className="topbar-label">Sakthi Construction</span>
       </div>
       <div className="topbar-right">
         <div className="notif-wrap" ref={notifRef}>
@@ -624,7 +608,7 @@ function DocumentManager({ title, documents, onChange, pushToast, imageOnly = fa
    PROPERTY FORM
    ========================================================= */
 function emptyProperty() {
-  return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, length: '', width: '', carpetArea: '', builtupArea: '', plotArea: '', facingRoad: '', landUse: 'Residential', expectedPrice: '', pricePerSqft: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, ownerDocumentsList: [], propertyDocumentsList: [], status: 'Available', rentAmount: '', forSale: false, listed: false };
+  return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, facingRoad: '', landUse: 'Residential', expectedPrice: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, ownerDocumentsList: [], propertyDocumentsList: [], status: 'Available', rentAmount: '', forSale: false, listed: false };
 }
 
 function PropertyForm({ initial, onSave, onCancel, pushToast }) {
@@ -695,23 +679,9 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
       )}
 
       <div className="form-section">
-        <h4>Measurements &amp; pricing</h4>
+        <h4>Pricing &amp; rent</h4>
         <div className="form-grid">
-          {form.mode === 'land' ? (
-            <>
-              <label>Plot area (sqft) *<input required type="number" value={form.plotArea} onChange={(e) => set('plotArea', e.target.value)} /></label>
-              <label>Facing road (ft)<input value={form.facingRoad} onChange={(e) => set('facingRoad', e.target.value)} /></label>
-            </>
-          ) : (
-            <>
-              <label>Length (sqft)<input type="number" value={form.length} onChange={(e) => set('length', e.target.value)} /></label>
-              <label>Width (sqft)<input type="number" value={form.width} onChange={(e) => set('width', e.target.value)} /></label>
-              <label>Carpet area (sqft)<input type="number" value={form.carpetArea} onChange={(e) => set('carpetArea', e.target.value)} /></label>
-              <label>Built-up area (sqft)<input type="number" value={form.builtupArea} onChange={(e) => set('builtupArea', e.target.value)} /></label>
-            </>
-          )}
           <label>Expected price (₹)<input type="number" value={form.expectedPrice} onChange={(e) => set('expectedPrice', e.target.value)} /></label>
-          <label>Price / sqft (₹)<input type="number" value={form.pricePerSqft} onChange={(e) => set('pricePerSqft', e.target.value)} /></label>
           {form.mode === 'building' && (
             <>
               <label>Monthly maintenance (₹)<input type="number" value={form.monthlyMaintenance} onChange={(e) => set('monthlyMaintenance', e.target.value)} /></label>
@@ -826,7 +796,7 @@ function TenantForm({ initial, properties, onSave, onCancel, pushToast }) {
 
       <div className="form-section">
         <h4>Assign property</h4>
-        <div className="property-search-row"><div className="search-box property-picker-search"><Icon name="search" size={15}/><input placeholder="Search flat, house, complex..." value={propertySearch} onChange={(e)=>setPropertySearch(e.target.value)} /></div><button type="button" className="btn btn-outline btn-sm" onClick={()=>setPropertySearch(propertySearch.trim())}><Icon name="search" size={14}/> Search</button></div>
+        <div className="property-search-row"><div className="search-box property-picker-search"><Icon name="search" size={17}/><input placeholder="Search flat, house, complex..." value={propertySearch} onChange={(e)=>setPropertySearch(e.target.value)} /></div></div>
         <div className="property-picker-list">
           {properties.filter((p)=>{ const q=propertySearch.trim().toLowerCase(); return !q || `${p.name} ${p.type} ${p.address} ${p.city} ${p.flatType||''}`.toLowerCase().includes(q); }).map((p)=><button type="button" key={p.id} className={`property-picker-option ${form.propertyId===p.id?'selected':''}`} onClick={()=>set('propertyId',p.id)}><span><strong>{p.name}</strong><small>{p.type} · {p.flatType || 'Property'} · {p.address}</small></span>{form.propertyId===p.id && <Icon name="check" size={15}/>}</button>)}
           {properties.length>0 && properties.filter((p)=>{ const q=propertySearch.trim().toLowerCase(); return !q || `${p.name} ${p.type} ${p.address} ${p.city} ${p.flatType||''}`.toLowerCase().includes(q); }).length===0 && <p className="muted small">No matching property found.</p>}
@@ -890,7 +860,7 @@ function TenantForm({ initial, properties, onSave, onCancel, pushToast }) {
 /* =========================================================
    DASHBOARD PAGE
    ========================================================= */
-function DashboardPage({ properties, tenants, bills, storageFees, notifications, setPage }) {
+function DashboardPage({ properties, tenants, bills, notifications, setPage }) {
   const stats = useMemo(() => {
     const total = properties.length;
     const occupied = properties.filter((p) => p.status === 'Occupied').length;
@@ -943,7 +913,7 @@ function DashboardPage({ properties, tenants, bills, storageFees, notifications,
           <div className="welcome-copy"><h1>Good Morning, Admin</h1><p>Here's your property overview</p></div>
         </div>
         <div className="dashboard-actions">
-          <button className="today-btn"><Icon name="clock" size={14}/><span>Today</span><b>{now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</b></button>
+          <div className="today-btn"><span>Today</span><b>{now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</b></div>
           <button className="property-filter" onClick={() => setPage('properties')}><Icon name="building" size={14}/> All Properties</button>
         </div>
       </div>
@@ -955,8 +925,8 @@ function DashboardPage({ properties, tenants, bills, storageFees, notifications,
         <StatCard icon="users" label="Total Tenants" value={stats.totalTenants} sub="Active tenants" tone="blue" />
         <StatCard icon="cash" label="Expected Rent" value={formatCurrency(stats.rentCollected + stats.rentPending + stats.rentOverdue)} sub="This month" tone="purple" />
         <StatCard icon="check" label="Rent Collected" value={formatCurrency(stats.rentCollected)} sub={stats.rentCollected + stats.rentPending + stats.rentOverdue ? `${Math.round(stats.rentCollected/(stats.rentCollected+stats.rentPending+stats.rentOverdue)*100)}% of expected` : '0% of expected'} tone="green" />
-        <StatCard icon="clock" label="Rent Pending" value={formatCurrency(stats.rentPending)} sub={stats.rentCollected + stats.rentPending + stats.rentOverdue ? `${Math.round(stats.rentPending/(stats.rentCollected+stats.rentPending+stats.rentOverdue)*100)}% of expected` : '0% of expected'} tone="gold" />
-        <StatCard icon="alert" label="Overdue Rent" value={formatCurrency(stats.rentOverdue)} sub={`${tenants.filter(t => (t.rentHistory || []).some(r => r.status === 'Overdue')).length} tenants`} tone="red" />
+        <StatCard onClick={() => setPage('rent')} icon="cash" label="Rent Pending" value={formatCurrency(stats.rentPending)} sub={stats.rentCollected + stats.rentPending + stats.rentOverdue ? `${Math.round(stats.rentPending/(stats.rentCollected+stats.rentPending+stats.rentOverdue)*100)}% of expected` : '0% of expected'} tone="gold" />
+        <StatCard onClick={() => setPage('rent')} icon="alert" label="Overdue Rent" value={formatCurrency(stats.rentOverdue)} sub={`${tenants.filter(t => (t.rentHistory || []).some(r => r.status === 'Overdue')).length} tenants`} tone="red" />
       </div>
 
       <div className="dashboard-grid-three">
@@ -973,7 +943,7 @@ function DashboardPage({ properties, tenants, bills, storageFees, notifications,
         </section>
         <section className="dash-panel rent-status-panel">
           <div className="panel-title"><div><h3>Rent Status</h3><p>Current portfolio</p></div></div>
-          <div className="rent-status-layout"><DonutChart segments={rentStatus.filter(x=>x.value>0)} size={116} thickness={18} centerText={formatCompactCurrency(rentStatus.reduce((sum, x) => sum + Number(x.value || 0), 0))}/><div className="reference-legend">{rentStatus.map((x)=><div key={x.label}><i style={{background:x.color}}/><span>{x.label}</span><b>{x.value}</b></div>)}</div></div>
+          <div className="rent-status-layout"><DonutChart segments={rentStatus.filter(x=>x.value>0)} size={116} thickness={18} centerText={formatCompactCurrency(rentStatus.reduce((sum, x) => sum + Number(x.value || 0), 0))}/><div className="reference-legend">{rentStatus.map((x)=><div key={x.label} className={(x.label === 'Due Soon' || x.label === 'Overdue') ? 'rent-legend-clickable' : ''} onClick={(x.label === 'Due Soon' || x.label === 'Overdue') ? () => setPage('rent') : undefined}><i style={{background:x.color}}/><span>{x.label}</span><b>{x.value}</b></div>)}</div></div>
         </section>
       </div>
 
@@ -1018,25 +988,38 @@ function DashboardPage({ properties, tenants, bills, storageFees, notifications,
     </div>
   );
 }
+function BackButton({ onBack }) {
+  return (
+    <button type="button" className="btn btn-outline back-button" onClick={onBack}>
+      <Icon name="arrowLeft" size={16} /> Back
+    </button>
+  );
+}
+
 /* =========================================================
    PROPERTIES PAGE
    ========================================================= */
-function PropertiesPage({ properties, onAdd, onUpdate, onDelete, onToggleSale, pushToast }) {
-  const [query, setQuery] = useState('');
+function PropertiesPage({ properties, onAdd, onUpdate, onDelete, onToggleSale, pushToast, onBack }) {
   const [typeFilter, setTypeFilter] = useState('All');
+  const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const filtered = properties.filter((p) =>
-    (typeFilter === 'All' || p.type === typeFilter) &&
-    (p.name.toLowerCase().includes(query.toLowerCase()) || p.address.toLowerCase().includes(query.toLowerCase()))
-  );
+  const search = query.trim().toLowerCase();
+  const filtered = properties.filter((p) => {
+    const name = String(p.name || '').toLowerCase();
+    const address = String(p.address || '').toLowerCase();
+    return (typeFilter === 'All' || p.type === typeFilter) && (!search || name.includes(search) || address.includes(search));
+  });
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Properties</h2>
+        <div className="page-header-left">
+          <BackButton onBack={onBack} />
+          <h2>Properties</h2>
+        </div>
         <button className="btn btn-primary" onClick={() => { setEditing(null); setModalOpen(true); }}><Icon name="plus" size={16} /> Add property</button>
       </div>
       <div className="toolbar">
@@ -1056,10 +1039,6 @@ function PropertiesPage({ properties, onAdd, onUpdate, onDelete, onToggleSale, p
             </div>
             <h3>{p.name}</h3>
             <p className="muted small"><Icon name="mapPin" size={13} /> {p.address}, {p.city}</p>
-            <div className="property-stats">
-              <span>{p.carpetArea || p.plotArea || '—'} sqft</span>
-              <span>{p.rentAmount ? `${formatCurrency(p.rentAmount)}/mo` : '—'}</span>
-            </div>
             <div className="property-card-actions">
               <button className="icon-btn" title="Edit" onClick={() => { setEditing(p); setModalOpen(true); }}><Icon name="edit" size={15} /></button>
               <button className={`btn btn-xs ${p.forSale ? 'btn-warning' : 'btn-outline'}`} onClick={() => onToggleSale(p.id)}>{p.forSale ? 'Listed ✓' : 'List for sale'}</button>
@@ -1104,9 +1083,9 @@ function PropertiesPage({ properties, onAdd, onUpdate, onDelete, onToggleSale, p
 /* =========================================================
    TENANTS PAGE
    ========================================================= */
-function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestore, pushToast, sendMessage }) {
-  const [query, setQuery] = useState('');
+function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestore, pushToast, sendMessage, onBack }) {
   const [buildingFilter, setBuildingFilter] = useState('All');
+  const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -1118,12 +1097,20 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
   const list = tenants
     .filter((t) => (showArchived ? t.status === 'Archived' : t.status !== 'Archived'))
     .filter((t) => buildingFilter === 'All' || t.propertyId === buildingFilter)
-    .filter((t) => t.fullName.toLowerCase().includes(query.toLowerCase()) || t.phone.includes(query));
+    .filter((t) => {
+      const search = query.trim().toLowerCase();
+      const name = String(t.fullName || '').toLowerCase();
+      const phone = String(t.phone || '').toLowerCase();
+      return !search || name.includes(search) || phone.includes(search);
+    });
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Tenants</h2>
+        <div className="page-header-left">
+          <BackButton onBack={onBack} />
+          <h2>Tenants</h2>
+        </div>
         <button className="btn btn-primary" onClick={() => { setEditing(null); setModalOpen(true); }}><Icon name="plus" size={16} /> Add tenant</button>
       </div>
       <div className="toolbar">
@@ -1245,7 +1232,7 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
 /* =========================================================
    RENT PAGE
    ========================================================= */
-function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast }) {
+function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onBack }) {
   const [monthFilter, setMonthFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [buildingFilter, setBuildingFilter] = useState('All');
@@ -1273,7 +1260,12 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast }) {
 
   return (
     <div className="page">
-      <div className="page-header"><div><h2>Rent collection</h2><p className="muted">Track current and previous tenant rent records.</p></div></div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <BackButton onBack={onBack} />
+          <div><h2>Rent collection</h2><p className="muted">Track current and previous tenant rent records.</p></div>
+        </div>
+      </div>
       <div className="toolbar rent-toolbar">
         <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}><option>All</option>{MONTHS.map((m) => <option key={m}>{m}</option>)}</select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option>All</option><option>Paid</option><option>Pending</option><option>Overdue</option></select>
@@ -1310,7 +1302,7 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast }) {
 /* =========================================================
    BILLS PAGE
    ========================================================= */
-function BillsPage({ bills, properties, onAdd, onMarkPaid, pushToast }) {
+function BillsPage({ bills, properties, onAdd, onMarkPaid, pushToast, onBack }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ propertyId: '', amount: '', month: MONTHS[new Date().getMonth()], dueDate: '' });
 
@@ -1324,7 +1316,10 @@ function BillsPage({ bills, properties, onAdd, onMarkPaid, pushToast }) {
 
   return (
     <div className="page">
-      <div className="page-header"><h2>Electricity bills</h2><button className="btn btn-primary" onClick={() => setModalOpen(true)}><Icon name="plus" size={16} /> Add bill</button></div>
+      <div className="page-header">
+        <div className="page-header-left"><BackButton onBack={onBack} /><h2>Electricity bills</h2></div>
+        <button className="btn btn-primary" onClick={() => setModalOpen(true)}><Icon name="plus" size={16} /> Add bill</button>
+      </div>
       <div className="table-wrap">
         <table>
           <thead><tr><th>Property</th><th>Month</th><th>Amount</th><th>Due date</th><th>Status</th><th></th></tr></thead>
@@ -1360,7 +1355,7 @@ function BillsPage({ bills, properties, onAdd, onMarkPaid, pushToast }) {
 /* =========================================================
    MAINTENANCE PAGE
    ========================================================= */
-function MaintenancePage({ requests, properties, onAdd, onStatusChange, pushToast }) {
+function MaintenancePage({ requests, properties, onAdd, onStatusChange, pushToast, onBack }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ propertyId: '', title: '', cost: '' });
   const columns = ['Pending', 'In Progress', 'Resolved'];
@@ -1375,7 +1370,10 @@ function MaintenancePage({ requests, properties, onAdd, onStatusChange, pushToas
 
   return (
     <div className="page">
-      <div className="page-header"><h2>Maintenance</h2><button className="btn btn-primary" onClick={() => setModalOpen(true)}><Icon name="plus" size={16} /> New request</button></div>
+      <div className="page-header">
+        <div className="page-header-left"><BackButton onBack={onBack} /><h2>Maintenance</h2></div>
+        <button className="btn btn-primary" onClick={() => setModalOpen(true)}><Icon name="plus" size={16} /> New request</button>
+      </div>
       <div className="kanban">
         {columns.map((col) => (
           <div className="kanban-col" key={col}>
@@ -1412,60 +1410,9 @@ function MaintenancePage({ requests, properties, onAdd, onStatusChange, pushToas
 }
 
 /* =========================================================
-   STORAGE PAGE
-   ========================================================= */
-function StoragePage({ storageFees, properties, onAdd, onMarkPaid, pushToast }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ propertyId: '', itemDescription: '', amount: '', month: MONTHS[new Date().getMonth()] });
-  const godowns = properties.filter((p) => p.type === 'Godown');
-
-  function submit(e) {
-    e.preventDefault();
-    if (!form.propertyId || !form.amount) return;
-    onAdd({ ...form, id: uid(), status: 'Pending' });
-    pushToast('Storage fee added'); setModalOpen(false);
-    setForm({ propertyId: '', itemDescription: '', amount: '', month: MONTHS[new Date().getMonth()] });
-  }
-
-  return (
-    <div className="page">
-      <div className="page-header"><h2>Storage fees</h2><button className="btn btn-primary" onClick={() => setModalOpen(true)}><Icon name="plus" size={16} /> Add storage fee</button></div>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>Godown</th><th>Description</th><th>Month</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            {storageFees.length === 0 && <tr><td colSpan="6"><EmptyState text="No storage fees recorded" /></td></tr>}
-            {storageFees.map((s) => (
-              <tr key={s.id}>
-                <td>{getPropertyName(properties, s.propertyId)}</td><td>{s.itemDescription}</td><td>{s.month}</td><td>{formatCurrency(s.amount)}</td>
-                <td><Badge text={s.status} tone={s.status === 'Paid' ? 'success' : 'warning'} /></td>
-                <td>{s.status !== 'Paid' && <button className="btn btn-sm btn-success" onClick={() => { onMarkPaid(s.id); pushToast('Marked as paid'); }}>Mark paid</button>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {modalOpen && (
-        <Modal title="Add storage fee" onClose={() => setModalOpen(false)}>
-          <form className="form" onSubmit={submit}>
-            <div className="form-grid">
-              <label className="span-2">Godown *<select required value={form.propertyId} onChange={(e) => setForm((f) => ({ ...f, propertyId: e.target.value }))}><option value="">Select</option>{(godowns.length ? godowns : properties).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-              <label className="span-2">Description<input value={form.itemDescription} onChange={(e) => setForm((f) => ({ ...f, itemDescription: e.target.value }))} /></label>
-              <label>Month<select value={form.month} onChange={(e) => setForm((f) => ({ ...f, month: e.target.value }))}>{MONTHS.map((m) => <option key={m}>{m}</option>)}</select></label>
-              <label>Amount (₹) *<input required type="number" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} /></label>
-            </div>
-            <div className="form-actions"><button type="button" className="btn btn-ghost" onClick={() => setModalOpen(false)}>Cancel</button><button type="submit" className="btn btn-primary">Add</button></div>
-          </form>
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-/* =========================================================
    REPORTS PAGE
    ========================================================= */
-function ReportsPage({ tenants, properties }) {
+function ReportsPage({ tenants, properties, onBack }) {
   const [tab, setTab] = useState('Rent');
   const [year, setYear] = useState('2026');
   const [month, setMonth] = useState('All');
@@ -1504,7 +1451,9 @@ function ReportsPage({ tenants, properties }) {
 
   return (
     <div className="page">
-      <div className="page-header"><h2>Reports</h2></div>
+      <div className="page-header">
+        <div className="page-header-left"><BackButton onBack={onBack} /><h2>Reports</h2></div>
+      </div>
       <div className="tabs">
         {['Rent', 'Tenants', 'Advance'].map((tb) => (<button key={tb} className={tab === tb ? 'active' : ''} onClick={() => setTab(tb)}>{tb}</button>))}
       </div>
@@ -1544,10 +1493,13 @@ function ReportsPage({ tenants, properties }) {
 /* =========================================================
    NOTIFICATIONS PAGE
    ========================================================= */
-function NotificationsPage({ notifications, onMarkRead, onMarkAllRead }) {
+function NotificationsPage({ notifications, onMarkRead, onMarkAllRead, onBack }) {
   return (
     <div className="page">
-      <div className="page-header"><h2>Notifications</h2><button className="btn btn-outline btn-sm" onClick={onMarkAllRead}>Mark all read</button></div>
+      <div className="page-header">
+        <div className="page-header-left"><BackButton onBack={onBack} /><h2>Notifications</h2></div>
+        <button className="btn btn-outline btn-sm" onClick={onMarkAllRead}>Mark all read</button>
+      </div>
       <div className="notif-list page-notif-list">
         {notifications.length === 0 && <EmptyState text="No notifications" />}
         {notifications.map((n) => (
@@ -1564,7 +1516,7 @@ function NotificationsPage({ notifications, onMarkRead, onMarkAllRead }) {
 /* =========================================================
    SETTINGS PAGE
    ========================================================= */
-function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onToggleListed, onToggleSale, notifPrefs, setNotifPrefs, pushToast, onDeleteAllData, onNavigate, adminProfile, onSaveProfile }) {
+function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onToggleListed, onToggleSale, notifPrefs, setNotifPrefs, pushToast, onDeleteAllData, onNavigate, adminProfile, onSaveProfile, onBack }) {
   const [section, setSection] = useState(null);
   const [managerForm, setManagerForm] = useState({ name: '', phone: '', role: 'Manager' });
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -1775,7 +1727,9 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
 
   return (
     <div className="page settings-page">
-      <div className="page-header"><h2>Settings</h2></div>
+      <div className="page-header">
+        <div className="page-header-left"><BackButton onBack={onBack} /><h2>Settings</h2></div>
+      </div>
       <div className="settings-list">
         {items.map((it) => (
           <div key={it.key} className={`settings-section ${section === it.key ? 'open' : ''}`}>
@@ -1797,278 +1751,189 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
   );
 }
 
+
 /* =========================================================
-   ADMIN AUTHENTICATION — FRONTEND ONLY FOR NOW
-
-   First run:
-   - Set one administrator username + strong password.
-   Later:
-   - Only the administrator login form is shown.
-   - No public signup.
-   - No forgot-password flow.
-
-   NOTE: This is a browser-side authentication gate. It is suitable for
-   the current frontend-only stage. Real strong security must move the
-   password verification to the backend/Prisma layer later.
+   WHATSAPP CONTACTS — frontend-only contact launcher
    ========================================================= */
-const AUTH_STORAGE_KEY = 'sakthi_admin_auth_v2';
-const AUTH_SESSION_KEY = 'sakthi_admin_session_v2';
-const AUTH_LOCK_KEY = 'sakthi_admin_lock_v2';
-const AUTH_MAX_ATTEMPTS = 5;
-const AUTH_LOCK_MS = 60 * 1000;
-const AUTH_ITERATIONS = 120000;
-
-function readJsonStorage(storage, key, fallback = null) {
-  try {
-    const raw = storage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
+function normalizeWhatsAppPhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.length === 10 ? `91${digits}` : digits;
 }
 
-function bytesToHex(bytes) {
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+function openWhatsAppContact(contact, message = '') {
+  const phone = normalizeWhatsAppPhone(contact.phone);
+  if (!phone) return false;
+  const url = `https://wa.me/${phone}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+  return true;
 }
 
-function hexToBytes(hex) {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < bytes.length; i += 1) bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  return bytes;
-}
+function buildWhatsAppDirectoryMessage({ tenants = [], properties = [], managers = [], adminProfile = null }) {
+  const contacts = [];
+  const seen = new Set();
+  const add = (contact) => {
+    const phone = normalizeWhatsAppPhone(contact.phone);
+    if (!phone || seen.has(phone)) return;
+    seen.add(phone);
+    contacts.push(contact);
+  };
 
-async function derivePasswordVerifier(password, saltHex) {
-  if (!globalThis.crypto?.subtle) throw new Error('Secure browser cryptography is unavailable. Please use a modern browser.');
-  const encoder = new TextEncoder();
-  const keyMaterial = await globalThis.crypto.subtle.importKey(
-    'raw',
-    encoder.encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  );
-  const salt = hexToBytes(saltHex);
-  const bits = await globalThis.crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: AUTH_ITERATIONS, hash: 'SHA-256' },
-    keyMaterial,
-    256
-  );
-  return bytesToHex(new Uint8Array(bits));
-}
+  tenants.forEach((tenant) => add({
+    name: tenant.fullName || 'Tenant',
+    phone: tenant.phone,
+    type: 'Tenant',
+    property: properties.find((p) => p.id === tenant.propertyId)?.name || 'No property assigned',
+  }));
 
-function generateSalt() {
-  if (!globalThis.crypto?.getRandomValues) throw new Error('Secure random generation is unavailable.');
-  const bytes = new Uint8Array(16);
-  globalThis.crypto.getRandomValues(bytes);
-  return bytesToHex(bytes);
-}
+  properties.forEach((property) => add({
+    name: property.ownerName || 'Property owner',
+    phone: property.ownerPhone,
+    type: 'Property owner',
+    property: property.name || 'Property',
+  }));
 
-function validateAdminPassword(password) {
-  if (password.length < 12) return 'Password must be at least 12 characters.';
-  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
-  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter.';
-  if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
-  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must contain at least one special character.';
-  return '';
-}
+  managers.forEach((manager) => add({
+    name: manager.name || 'Manager',
+    phone: manager.phone,
+    type: manager.role || 'Manager',
+    property: 'Management',
+  }));
 
-function normalizeUsername(value) {
-  return value.trim().toLowerCase();
-}
+  add({
+    name: adminProfile?.name || 'Administrator',
+    phone: adminProfile?.phone,
+    type: 'Admin',
+    property: 'Sakthi Construction',
+  });
 
-function getStoredAdmin() {
-  return readJsonStorage(localStorage, AUTH_STORAGE_KEY, null);
-}
-
-function isAdminConfigured() {
-  const admin = getStoredAdmin();
-  return Boolean(admin?.username && admin?.salt && admin?.verifier);
-}
-
-function getLockState() {
-  return readJsonStorage(localStorage, AUTH_LOCK_KEY, { attempts: 0, lockedUntil: 0 });
-}
-
-function saveLockState(state) {
-  localStorage.setItem(AUTH_LOCK_KEY, JSON.stringify(state));
-}
-
-function clearLockState() {
-  localStorage.removeItem(AUTH_LOCK_KEY);
-}
-
-function getRemainingLockSeconds() {
-  const lock = getLockState();
-  return lock.lockedUntil > Date.now() ? Math.ceil((lock.lockedUntil - Date.now()) / 1000) : 0;
-}
-
-function AuthPage({ onAuthenticated }) {
-  const configured = isAdminConfigured();
-  const [mode, setMode] = useState(configured ? 'login' : 'setup');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [remainingLock, setRemainingLock] = useState(getRemainingLockSeconds());
-
-  useEffect(() => {
-    if (!remainingLock) return undefined;
-    const timer = setInterval(() => setRemainingLock(getRemainingLockSeconds()), 1000);
-    return () => clearInterval(timer);
-  }, [remainingLock]);
-
-  function clearMessages() {
-    setError('');
-    setMessage('');
+  if (!contacts.length) {
+    return 'SAKTHI CONSTRUCTION\n\nNo saved phone numbers are available yet.';
   }
 
-  async function setupAdmin(e) {
-    e.preventDefault();
-    clearMessages();
-    const cleanUsername = normalizeUsername(username);
-    if (!/^[a-z0-9._-]{4,32}$/.test(cleanUsername)) {
-      setError('Username must be 4–32 characters and use only letters, numbers, dot, underscore or hyphen.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-    const passwordError = validateAdminPassword(password);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-    setBusy(true);
-    try {
-      const salt = generateSalt();
-      const verifier = await derivePasswordVerifier(password, salt);
-      const admin = {
-        username: cleanUsername,
-        salt,
-        verifier,
-        createdAt: new Date().toISOString(),
-        role: 'Administrator'
-      };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(admin));
-      clearLockState();
-      setPassword('');
-      setConfirmPassword('');
-      setMode('login');
-      setMessage('Administrator account created. Sign in to continue.');
-    } catch (err) {
-      setError(err.message || 'Unable to create the administrator account.');
-    } finally {
-      setBusy(false);
-    }
-  }
+  const lines = [
+    'SAKTHI CONSTRUCTION — CONTACT DIRECTORY',
+    '',
+    ...contacts.map((contact, index) => [
+      `${index + 1}. ${contact.name}`,
+      `Phone: ${contact.phone}`,
+      `Type: ${contact.type}`,
+      `Property: ${contact.property || '—'}`,
+      '',
+    ].join('\n')),
+  ];
 
-  async function login(e) {
-    e.preventDefault();
-    clearMessages();
-    const lockSeconds = getRemainingLockSeconds();
-    if (lockSeconds > 0) {
-      setRemainingLock(lockSeconds);
-      setError(`Too many failed attempts. Try again in ${lockSeconds}s.`);
-      return;
-    }
-    const admin = getStoredAdmin();
-    if (!admin) {
-      setMode('setup');
-      setError('Administrator credentials are not configured.');
-      return;
-    }
-    const cleanUsername = normalizeUsername(username);
-    if (!cleanUsername || !password) {
-      setError('Enter your administrator username and password.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const verifier = await derivePasswordVerifier(password, admin.salt);
-      if (cleanUsername !== admin.username || verifier !== admin.verifier) {
-        const state = getLockState();
-        const attempts = Number(state.attempts || 0) + 1;
-        if (attempts >= AUTH_MAX_ATTEMPTS) {
-          saveLockState({ attempts, lockedUntil: Date.now() + AUTH_LOCK_MS });
-          setRemainingLock(Math.ceil(AUTH_LOCK_MS / 1000));
-        } else {
-          saveLockState({ attempts, lockedUntil: 0 });
-        }
-        setPassword('');
-        setError('Invalid administrator username or password.');
-        return;
-      }
-      clearLockState();
-      const session = {
-        username: admin.username,
-        role: 'Administrator',
-        loggedInAt: new Date().toISOString()
-      };
-      sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-      setPassword('');
-      onAuthenticated(session);
-    } catch (err) {
-      setError(err.message || 'Unable to sign in securely.');
-    } finally {
-      setBusy(false);
-    }
-  }
+  return lines.join('\n').trim();
+}
 
-  const isSetup = mode === 'setup';
+function openWhatsAppDirectory(data) {
+  const message = buildWhatsAppDirectoryMessage(data);
+  const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  window.location.href = url;
+}
+
+function WhatsAppPage({ tenants, properties, managers, adminProfile, setPage }) {
+  const [search, setSearch] = useState('');
+
+  const contacts = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+
+    const add = (contact) => {
+      const phone = normalizeWhatsAppPhone(contact.phone);
+      if (!phone || seen.has(phone)) return;
+      seen.add(phone);
+      list.push({ ...contact, phone: contact.phone, normalizedPhone: phone });
+    };
+
+    tenants.forEach((tenant) => add({
+      id: `tenant-${tenant.id}`,
+      name: tenant.fullName || 'Tenant',
+      phone: tenant.phone,
+      type: 'Tenant',
+      property: properties.find((p) => p.id === tenant.propertyId)?.name || 'No property assigned',
+    }));
+
+    properties.forEach((property) => add({
+      id: `owner-${property.id}`,
+      name: property.ownerName || 'Property owner',
+      phone: property.ownerPhone,
+      type: 'Property owner',
+      property: property.name || 'Property',
+    }));
+
+    managers.forEach((manager) => add({
+      id: `manager-${manager.id}`,
+      name: manager.name || 'Manager',
+      phone: manager.phone,
+      type: manager.role || 'Manager',
+      property: 'Management',
+    }));
+
+    add({
+      id: 'admin',
+      name: adminProfile?.name || 'Administrator',
+      phone: adminProfile?.phone,
+      type: 'Admin',
+      property: 'Sakthi Construction',
+    });
+
+    return list;
+  }, [tenants, properties, managers, adminProfile]);
+
+  const filtered = contacts.filter((contact) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return [contact.name, contact.phone, contact.type, contact.property]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(q));
+  });
+
   return (
-    <div className="auth-shell">
-      <div className="auth-brand-panel">
-        <div className="auth-brand-mark"><Icon name="home" size={28} /></div>
-        <div className="auth-brand-name"><strong>SAKTHI</strong><span>CONSTRUCTION</span><small>Property &amp; Facility Management</small></div>
-        <div className="auth-brand-line" />
-        <div className="auth-trust"><Icon name="shield" size={16} /><span>Administrator access only</span></div>
-        <div className="auth-footer">Better Properties<br/>Brighter Future</div>
+    <div className="page whatsapp-page">
+      <div className="page-header whatsapp-page-header">
+        <div>
+          <button type="button" className="btn btn-outline back-button" onClick={() => setPage('dashboard')}>
+            <Icon name="arrowLeft" size={16} /> Back
+          </button>
+          <div className="page-title-row">
+            <div className="page-icon whatsapp-page-icon"><Icon name="phone" size={20} /></div>
+            <div>
+              <h2>WhatsApp Contacts</h2>
+              <p className="muted">Every saved contact with a phone number appears here.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="auth-content">
-        <div className="auth-card">
-          <div className="auth-card-head">
-            <span className="auth-kicker">SAKTHI CONSTRUCTION</span>
-            <h1>{isSetup ? 'Set administrator access' : 'Administrator login'}</h1>
-            <p>{isSetup ? 'Create the one administrator account used to access this system.' : 'Sign in to manage your property and facility workspace.'}</p>
-          </div>
-
-          {isSetup ? (
-            <form className="auth-form" onSubmit={setupAdmin}>
-              <label>Administrator username
-                <div className="auth-input"><Icon name="user" size={17}/><input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username" /></div>
-              </label>
-              <label>Password
-                <div className="auth-input"><Icon name="lock" size={17}/><input type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Use 12+ characters" /><button type="button" className="auth-visibility" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password visibility"><Icon name={showPassword ? 'eyeOff' : 'eye'} size={16}/></button></div>
-              </label>
-              <label>Confirm password
-                <div className="auth-input"><Icon name="lock" size={17}/><input type={showConfirm ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" /><button type="button" className="auth-visibility" onClick={() => setShowConfirm((v) => !v)} aria-label="Toggle confirmation visibility"><Icon name={showConfirm ? 'eyeOff' : 'eye'} size={16}/></button></div>
-              </label>
-              <div className="auth-security-note"><strong>Strong password required</strong><span>12+ characters · uppercase · lowercase · number · special character</span></div>
-              {error && <div className="auth-error">{error}</div>}
-              {message && <div className="auth-success">{message}</div>}
-              <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Securing account…' : 'Set administrator password'} <Icon name="shield" size={17}/></button>
-            </form>
-          ) : (
-            <form className="auth-form" onSubmit={login}>
-              <label>Administrator username
-                <div className="auth-input"><Icon name="user" size={17}/><input autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username" /></div>
-              </label>
-              <label>Password
-                <div className="auth-input"><Icon name="lock" size={17}/><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" /><button type="button" className="auth-visibility" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password visibility"><Icon name={showPassword ? 'eyeOff' : 'eye'} size={16}/></button></div>
-              </label>
-              {error && <div className="auth-error">{error}</div>}
-              {message && <div className="auth-success">{message}</div>}
-              {remainingLock > 0 && <div className="auth-security-note"><strong>Temporary sign-in lock</strong><span>Too many failed attempts. Try again in {remainingLock}s.</span></div>}
-              <button className="auth-submit" type="submit" disabled={busy || remainingLock > 0}>{busy ? 'Signing in…' : 'Sign in securely'} <Icon name="arrowRight" size={17}/></button>
-            </form>
-          )}
+      <div className="whatsapp-toolbar">
+        <div className="search-box whatsapp-search">
+          <Icon name="search" size={16} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, phone or type" />
         </div>
+        <span className="whatsapp-count">{filtered.length} contact{filtered.length === 1 ? '' : 's'}</span>
+      </div>
+
+      <div className="whatsapp-list">
+        {filtered.length === 0 ? (
+          <div className="empty-state whatsapp-empty">
+            <Icon name="phone" size={28} />
+            <h3>No phone numbers found</h3>
+            <p>Add a tenant, owner, manager or admin phone number to see it here.</p>
+          </div>
+        ) : filtered.map((contact) => (
+          <div className="whatsapp-contact-card" key={contact.id}>
+            <div className="whatsapp-avatar"><Icon name="user" size={20} /></div>
+            <div className="whatsapp-contact-main">
+              <strong>{contact.name}</strong>
+              <span>{contact.phone || '—'}</span>
+              <small>{contact.type}{contact.property ? ` • ${contact.property}` : ''}</small>
+            </div>
+            <button type="button" className="btn btn-whatsapp" onClick={() => openWhatsAppContact(contact)}>
+              <Icon name="send" size={15} /> Open WhatsApp
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -2078,48 +1943,24 @@ function AuthPage({ onAuthenticated }) {
    APP
    ========================================================= */
 export default function App() {
-  const [authUser, setAuthUser] = useState(() => readJsonStorage(sessionStorage, AUTH_SESSION_KEY, null));
-  const [adminProfile, setAdminProfile] = useState(() => readJsonStorage(localStorage, 'sakthi_admin_profile_v1', { name: 'Administrator', email: '', phone: '', bankName: '', accountNumber: '', ifsc: '', profilePhoto: null }));
+  const [adminProfile, setAdminProfile] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sakthi_admin_profile_v1')) || { name: 'Administrator', email: '', phone: '', bankName: '', accountNumber: '', ifsc: '', profilePhoto: null };
+    } catch {
+      return { name: 'Administrator', email: '', phone: '', bankName: '', accountNumber: '', ifsc: '', profilePhoto: null };
+    }
+  });
   const [properties, setProperties] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [bills, setBills] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
-  const [storageFees, setStorageFees] = useState([]);
   const [managers, setManagers] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [notifPrefs, setNotifPrefs] = useState({ rentReminders: true, maintenanceAlerts: true, newTenantAlerts: true, automaticMessages: true });
   const [toasts, setToasts] = useState([]);
   const [page, setPage] = useState('dashboard');
-  const [query, setQuery] = useState('');
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadProperties() {
-      try {
-        const response = await fetch(`${API_BASE}/properties`);
-        const data = await response.json().catch(() => []);
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to load properties');
-        }
-
-        if (!cancelled) {
-          setProperties(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        console.error('Property loading error:', error);
-      }
-    }
-
-    loadProperties();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   function pushToast(msg, type = 'success') {
     const id = uid();
@@ -2134,19 +1975,8 @@ export default function App() {
     pushNotification(`Message to ${tenant.fullName}: ${text}`, 'send');
   }
 
-  async function addProperty(p) {
-    const response = await fetch(`${API_BASE}/properties`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(p),
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to save property');
-    }
-
+  function addProperty(p) {
+    const data = { ...p, id: p.id || uid() };
     setProperties((ps) => [data, ...ps]);
     pushNotification(`New property added: ${data.name}`);
     return data;
@@ -2208,9 +2038,6 @@ export default function App() {
   function addMaintenance(m) { setMaintenance((ms) => [m, ...ms]); }
   function changeMaintenanceStatus(id, status) { setMaintenance((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m))); }
 
-  function addStorage(s) { setStorageFees((ss) => [s, ...ss]); }
-  function markStoragePaid(id) { setStorageFees((ss) => ss.map((s) => (s.id === id ? { ...s, status: 'Paid' } : s))); }
-
   function addManager(m) { setManagers((ms) => [m, ...ms]); }
   function removeManager(id) { setManagers((ms) => ms.filter((m) => m.id !== id)); }
 
@@ -2218,7 +2045,7 @@ export default function App() {
   function markAllRead() { setNotifications((n) => n.map((x) => ({ ...x, read: true }))); }
 
   function deleteAllData() {
-    setProperties([]); setTenants([]); setBills([]); setMaintenance([]); setStorageFees([]); setManagers([]);
+    setProperties([]); setTenants([]); setBills([]); setMaintenance([]); setManagers([]);
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -2227,58 +2054,53 @@ export default function App() {
     const next = { ...(adminProfile || {}), ...(nextProfile || {}) };
     setAdminProfile(next);
     localStorage.setItem('sakthi_admin_profile_v1', JSON.stringify(next));
-    setAuthUser((current) => {
-      const merged = { ...(current || {}), ...next };
-      sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(merged));
-      return merged;
-    });
     pushToast('Admin profile updated');
   }
 
   function logout() {
-    sessionStorage.removeItem(AUTH_SESSION_KEY);
-    setAuthUser(null);
+    setProfileOpen(false);
     setPage('dashboard');
+    pushToast('Login is disabled in this frontend-only version.');
   }
 
-  const searchResults = useMemo(() => {
-    if (!query) return [];
-    const q = query.toLowerCase();
-    const res = [];
-    properties.forEach((p) => { if (p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q)) res.push({ key: 'p-' + p.id, label: p.name, tag: p.type, icon: 'building', page: 'properties' }); });
-    tenants.forEach((t) => { if (t.fullName.toLowerCase().includes(q) || t.phone.includes(q)) res.push({ key: 't-' + t.id, label: t.fullName, tag: 'Tenant', icon: 'users', page: 'tenants' }); });
-    return res.slice(0, 8);
-  }, [query, properties, tenants]);
 
   function renderPage() {
     switch (page) {
-      case 'dashboard': return <DashboardPage properties={properties} tenants={tenants} bills={bills} storageFees={storageFees} notifications={notifications} setPage={setPage} />;
-      case 'properties': return <PropertiesPage properties={properties} onAdd={addProperty} onUpdate={updateProperty} onDelete={deleteProperty} onToggleSale={toggleSale} pushToast={pushToast} />;
-      case 'tenants': return <TenantsPage tenants={tenants} properties={properties} onAdd={addTenant} onUpdate={updateTenant} onArchive={archiveTenant} onRestore={restoreTenant} pushToast={pushToast} sendMessage={sendMessage} />;
-      case 'rent': return <RentPage tenants={tenants} properties={properties} onMarkPaid={markRentPaid} sendMessage={sendMessage} pushToast={pushToast} />;
-      case 'bills': return <BillsPage bills={bills} properties={properties} onAdd={addBill} onMarkPaid={markBillPaid} pushToast={pushToast} />;
-      case 'maintenance': return <MaintenancePage requests={maintenance} properties={properties} onAdd={addMaintenance} onStatusChange={changeMaintenanceStatus} pushToast={pushToast} />;
-      case 'storage': return <StoragePage storageFees={storageFees} properties={properties} onAdd={addStorage} onMarkPaid={markStoragePaid} pushToast={pushToast} />;
-      case 'reports': return <ReportsPage tenants={tenants} properties={properties} />;
-      case 'notifications': return <NotificationsPage notifications={notifications} onMarkRead={markRead} onMarkAllRead={markAllRead} />;
-      case 'settings': return <SettingsPage managers={managers} onAddManager={addManager} onRemoveManager={removeManager} properties={properties} onToggleListed={toggleListed} onToggleSale={toggleSale} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} pushToast={pushToast} onDeleteAllData={deleteAllData} onNavigate={setPage} adminProfile={adminProfile} onSaveProfile={saveAdminProfile} />;
-      default: return null;
+      case 'dashboard': return <DashboardPage properties={properties} tenants={tenants} bills={bills} notifications={notifications} setPage={setPage} />;
+      case 'properties': return <PropertiesPage properties={properties} onAdd={addProperty} onUpdate={updateProperty} onDelete={deleteProperty} onToggleSale={toggleSale} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
+      case 'tenants': return <TenantsPage tenants={tenants} properties={properties} onAdd={addTenant} onUpdate={updateTenant} onArchive={archiveTenant} onRestore={restoreTenant} pushToast={pushToast} sendMessage={sendMessage} onBack={() => setPage('dashboard')} />;
+      case 'rent': return <RentPage tenants={tenants} properties={properties} onMarkPaid={markRentPaid} sendMessage={sendMessage} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
+      case 'bills': return <BillsPage bills={bills} properties={properties} onAdd={addBill} onMarkPaid={markBillPaid} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
+      case 'maintenance': return <MaintenancePage requests={maintenance} properties={properties} onAdd={addMaintenance} onStatusChange={changeMaintenanceStatus} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
+      case 'reports': return <ReportsPage tenants={tenants} properties={properties} onBack={() => setPage('dashboard')} />;
+      case 'notifications': return <NotificationsPage notifications={notifications} onMarkRead={markRead} onMarkAllRead={markAllRead} onBack={() => setPage('dashboard')} />;
+      case 'whatsapp': return <WhatsAppPage tenants={tenants} properties={properties} managers={managers} adminProfile={adminProfile} setPage={setPage} />;
+      case 'settings': return <SettingsPage managers={managers} onAddManager={addManager} onRemoveManager={removeManager} properties={properties} onToggleListed={toggleListed} onToggleSale={toggleSale} notifPrefs={notifPrefs} setNotifPrefs={setNotifPrefs} pushToast={pushToast} onDeleteAllData={deleteAllData} onNavigate={setPage} adminProfile={adminProfile} onSaveProfile={saveAdminProfile} onBack={() => setPage('dashboard')} />;
+      default: return <DashboardPage properties={properties} tenants={tenants} bills={bills} notifications={notifications} setPage={setPage} />;
     }
   }
 
-  if (!authUser) {
-    return <AuthPage onAuthenticated={setAuthUser} />;
-  }
+  const currentUser = { username: 'razi', ...(adminProfile || {}) };
 
   return (
     <div className="app-shell">
       <Sidebar page={page} setPage={setPage} unreadCount={unreadCount} onLogout={logout} />
       <div className="main-area">
-        <Topbar query={query} setQuery={setQuery} searchResults={searchResults} onNavigate={setPage}
-          notifications={notifications} unreadCount={unreadCount} notifOpen={notifOpen} setNotifOpen={setNotifOpen}
-          onMarkRead={markRead} onMarkAllRead={markAllRead} profileOpen={profileOpen} setProfileOpen={setProfileOpen} user={{ ...(authUser || {}), ...(adminProfile || {}) }} onLogout={logout} />
+        <Topbar notifications={notifications} unreadCount={unreadCount} notifOpen={notifOpen} setNotifOpen={setNotifOpen}
+          onMarkRead={markRead} onMarkAllRead={markAllRead} profileOpen={profileOpen} setProfileOpen={setProfileOpen}
+          user={currentUser} onLogout={logout} onNavigate={setPage} />
         <main className="content">{renderPage()}</main>
       </div>
+      <button
+        type="button"
+        className="floating-whatsapp"
+        onClick={() => openWhatsAppDirectory({ tenants, properties, managers, adminProfile })}
+        aria-label="Open WhatsApp with contact details"
+        title="Open WhatsApp with saved contact details"
+      >
+        <Icon name="phone" size={22} />
+        <span>WhatsApp</span>
+      </button>
       <ToastContainer toasts={toasts} />
     </div>
   );
