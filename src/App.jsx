@@ -34,6 +34,7 @@ const ICONS = {
   archive: <><rect x="3" y="4" width="18" height="4" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" /><line x1="10" y1="12.5" x2="14" y2="12.5" /></>,
   arrowLeft: <><path d="M19 12H5" /><path d="M11 18l-6-6 6-6" /></>,
   land: <><rect x="3" y="3" width="8" height="8" /><rect x="13" y="3" width="8" height="8" /><rect x="3" y="13" width="8" height="8" /><rect x="13" y="13" width="8" height="8" /></>,
+  calculator: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2M8 18h2m4 0h2" /></>,
   send: <><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" /></>,
   logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></>,
   circle: <circle cx="12" cy="12" r="9" />,
@@ -522,7 +523,7 @@ function BarChart({ data, keys, colors, height = 220 }) {
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: 'home' },
   { key: 'properties', label: 'Properties', icon: 'building' },
-  { key: 'land-calculator', label: 'Land calculator', icon: 'land' },
+  { key: 'calculator', label: 'Calculator', icon: 'calculator' },
   { key: 'tenants', label: 'Tenants', icon: 'users' },
   { key: 'rent', label: 'Rent', icon: 'cash' },
   { key: 'bills', label: 'Bills', icon: 'bolt' },
@@ -534,7 +535,7 @@ const NAV_ITEMS = [
 
 function Sidebar({ page, setPage, unreadCount, onLogout }) {
   const labels = {
-    dashboard: 'Dashboard', properties: 'Properties', 'land-calculator': 'Land calculator', tenants: 'Tenants', rent: 'Rent Management',
+    dashboard: 'Dashboard', properties: 'Properties', calculator: 'Calculator', tenants: 'Tenants', rent: 'Rent Management',
     bills: 'Bills', maintenance: 'Maintenance', reports: 'Reports',
     notifications: 'Notifications', settings: 'Settings'
   };
@@ -1144,33 +1145,157 @@ function BackButton({ onBack }) {
   );
 }
 
-function LandCalculatorPage({ onBack }) {
+function LandCalculatorPanel() {
   const [length, setLength] = useState('');
   const [breadth, setBreadth] = useState('');
   const landArea = calculateLandArea(length, breadth);
+
+  return (
+    <section className="card" aria-labelledby="land-calculator-heading">
+      <div className="card-head"><h3 id="land-calculator-heading">Land area calculator</h3></div>
+      <div className="form-grid">
+        <label>Length (feet)<input type="number" min="0" step="any" value={length} onChange={(event) => setLength(event.target.value)} /></label>
+        <label>Breadth (feet)<input type="number" min="0" step="any" value={breadth} onChange={(event) => setBreadth(event.target.value)} /></label>
+      </div>
+      <div className="area-conversion-results" aria-live="polite">
+        <span><b>{landArea.squareFeet.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</b> sq ft</span>
+        <span><b>{landArea.acres.toLocaleString('en-IN', { maximumFractionDigits: 6 })}</b> acres</span>
+        <span><b>{landArea.cents.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</b> cents</span>
+        <span><b>{landArea.kuli.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</b> kuli</span>
+      </div>
+      <p className="muted small">Area is calculated as length × breadth. 1 kuli = 144 sq ft.</p>
+    </section>
+  );
+}
+
+function StandardCalculatorPanel() {
+  const [display, setDisplay] = useState('0');
+  const [storedValue, setStoredValue] = useState(null);
+  const [pendingOperation, setPendingOperation] = useState(null);
+  const [replaceDisplay, setReplaceDisplay] = useState(false);
+
+  function enterDigit(digit) {
+    if (display === 'Error' || replaceDisplay) {
+      setDisplay(digit);
+      setReplaceDisplay(false);
+      return;
+    }
+    setDisplay(display === '0' ? digit : display.length < 14 ? `${display}${digit}` : display);
+  }
+
+  function enterDecimal() {
+    if (display === 'Error' || replaceDisplay) {
+      setDisplay('0.');
+      setReplaceDisplay(false);
+    } else if (!display.includes('.')) {
+      setDisplay(`${display}.`);
+    }
+  }
+
+  function clear() {
+    setDisplay('0');
+    setStoredValue(null);
+    setPendingOperation(null);
+    setReplaceDisplay(false);
+  }
+
+  function calculate(first, second, operation) {
+    const result = operation === '+' ? first + second
+      : operation === '−' ? first - second
+        : operation === '×' ? first * second
+          : second === 0 ? NaN : first / second;
+    return Number.isFinite(result) ? String(Number(result.toPrecision(12))) : 'Error';
+  }
+
+  function chooseOperation(operation) {
+    const current = Number(display);
+    const nextDisplay = pendingOperation && !replaceDisplay
+      ? calculate(storedValue, current, pendingOperation)
+      : display;
+    setDisplay(nextDisplay);
+    setStoredValue(Number(nextDisplay));
+    setPendingOperation(operation);
+    setReplaceDisplay(true);
+  }
+
+  function showResult() {
+    if (!pendingOperation || storedValue === null) return;
+    setDisplay(calculate(storedValue, Number(display), pendingOperation));
+    setStoredValue(null);
+    setPendingOperation(null);
+    setReplaceDisplay(true);
+  }
+
+  function toggleSign() {
+    if (display !== 'Error' && Number(display) !== 0) setDisplay(String(Number(display) * -1));
+  }
+
+  function applyPercent() {
+    if (display !== 'Error') setDisplay(String(Number(display) / 100));
+  }
+
+  function removeDigit() {
+    if (display === 'Error' || replaceDisplay) {
+      setDisplay('0');
+      setReplaceDisplay(false);
+      return;
+    }
+    setDisplay(display.length > 1 ? display.slice(0, -1) : '0');
+  }
+
+  const keys = [
+    { label: 'AC', action: clear, style: 'utility' },
+    { label: '+/−', action: toggleSign, style: 'utility' },
+    { label: '%', action: applyPercent, style: 'utility' },
+    { label: '÷', action: () => chooseOperation('÷'), style: 'operation' },
+    ...['7', '8', '9'].map((digit) => ({ label: digit, action: () => enterDigit(digit) })),
+    { label: '×', action: () => chooseOperation('×'), style: 'operation' },
+    ...['4', '5', '6'].map((digit) => ({ label: digit, action: () => enterDigit(digit) })),
+    { label: '−', action: () => chooseOperation('−'), style: 'operation' },
+    ...['1', '2', '3'].map((digit) => ({ label: digit, action: () => enterDigit(digit) })),
+    { label: '+', action: () => chooseOperation('+'), style: 'operation' },
+    { label: '0', action: () => enterDigit('0'), style: 'zero' },
+    { label: '.', action: enterDecimal },
+    { label: '⌫', action: removeDigit, style: 'utility', ariaLabel: 'Backspace' },
+    { label: '=', action: showResult, style: 'equals' },
+  ];
+
+  return (
+    <section className="calculator-panel" aria-label="Standard calculator">
+      <output className="calculator-display" aria-label="Calculator display" aria-live="polite">{display}</output>
+      <div className="calculator-keys">
+        {keys.map((key) => (
+          <button
+            key={key.label}
+            type="button"
+            className={`calculator-key ${key.style || ''}`}
+            aria-label={key.ariaLabel || key.label}
+            onClick={key.action}
+          >
+            {key.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CalculatorPage({ onBack }) {
+  const [mode, setMode] = useState('standard');
 
   return (
     <div className="page">
       <div className="page-header">
         <div className="page-header-left">
           <BackButton onBack={onBack} />
-          <h2>Land area calculator</h2>
+          <h2>Calculator</h2>
         </div>
       </div>
-      <section className="card" aria-labelledby="land-calculator-heading">
-        <div className="card-head"><h3 id="land-calculator-heading">Dimensions</h3></div>
-        <div className="form-grid">
-          <label>Length (feet)<input type="number" min="0" step="any" value={length} onChange={(event) => setLength(event.target.value)} /></label>
-          <label>Breadth (feet)<input type="number" min="0" step="any" value={breadth} onChange={(event) => setBreadth(event.target.value)} /></label>
-        </div>
-        <div className="area-conversion-results" aria-live="polite">
-          <span><b>{landArea.squareFeet.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</b> sq ft</span>
-          <span><b>{landArea.acres.toLocaleString('en-IN', { maximumFractionDigits: 6 })}</b> acres</span>
-          <span><b>{landArea.cents.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</b> cents</span>
-          <span><b>{landArea.kuli.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</b> kuli</span>
-        </div>
-        <p className="muted small">Area is calculated as length × breadth. 1 kuli = 144 sq ft.</p>
-      </section>
+      <div className="calculator-mode-switch" role="group" aria-label="Calculator mode">
+        <button type="button" className={mode === 'standard' ? 'active' : ''} aria-pressed={mode === 'standard'} onClick={() => setMode('standard')}>Standard</button>
+        <button type="button" className={mode === 'land' ? 'active' : ''} aria-pressed={mode === 'land'} onClick={() => setMode('land')}>Land area</button>
+      </div>
+      {mode === 'standard' ? <StandardCalculatorPanel /> : <LandCalculatorPanel />}
     </div>
   );
 }
@@ -2270,7 +2395,7 @@ export default function App() {
     switch (page) {
       case 'dashboard': return <DashboardPage properties={properties} tenants={tenants} bills={bills} notifications={notifications} setPage={setPage} />;
       case 'properties': return <PropertiesPage properties={properties} onAdd={addProperty} onUpdate={updateProperty} onDelete={deleteProperty} onToggleSale={toggleSale} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
-      case 'land-calculator': return <LandCalculatorPage onBack={() => setPage('dashboard')} />;
+      case 'calculator': return <CalculatorPage onBack={() => setPage('dashboard')} />;
       case 'tenants': return <TenantsPage tenants={tenants} properties={properties} onAdd={addTenant} onUpdate={updateTenant} onArchive={archiveTenant} onRestore={restoreTenant} pushToast={pushToast} sendMessage={sendMessage} onBack={() => setPage('dashboard')} />;
       case 'rent': return <RentPage tenants={tenants} properties={properties} onMarkPaid={markRentPaid} sendMessage={sendMessage} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
       case 'bills': return <BillsPage bills={bills} properties={properties} onAdd={addBill} onMarkPaid={markBillPaid} pushToast={pushToast} onBack={() => setPage('dashboard')} />;

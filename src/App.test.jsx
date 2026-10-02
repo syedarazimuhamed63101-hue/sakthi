@@ -26,15 +26,32 @@ test('starts with no sample properties, tenants, or rent records', () => {
   expect(screen.getByText('No current rent records')).toBeDefined();
 });
 
-test('land calculator is available in its own section', () => {
+test('land and standard calculators are modes within one section', () => {
   render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: 'Land calculator' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Calculator' }));
+  expect(screen.queryByRole('button', { name: 'Land calculator' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Standard' })).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Land area' }));
 
   fireEvent.change(screen.getByLabelText('Length (feet)'), { target: { value: '20' } });
   fireEvent.change(screen.getByLabelText('Breadth (feet)'), { target: { value: '30' } });
 
+  expect(screen.getByRole('heading', { name: 'Calculator' })).toBeDefined();
   expect(screen.getByRole('heading', { name: 'Land area calculator' })).toBeDefined();
   expect(screen.getByText('600')).toBeDefined();
+});
+
+test('standard calculator performs basic arithmetic', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Calculator' }));
+
+  fireEvent.click(screen.getByRole('button', { name: '1' }));
+  fireEvent.click(screen.getByRole('button', { name: '2' }));
+  fireEvent.click(screen.getByRole('button', { name: '+' }));
+  fireEvent.click(screen.getByRole('button', { name: '7' }));
+  fireEvent.click(screen.getByRole('button', { name: '=' }));
+
+  expect(screen.getByLabelText('Calculator display').textContent).toBe('19');
 });
 
 test('Add Property shows land dimensions without embedding the calculator', () => {
