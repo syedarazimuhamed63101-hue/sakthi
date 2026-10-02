@@ -1,6 +1,15 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import App, { DashboardPage } from './App';
+import App, { calculateLandArea, DashboardPage, TenantsPage } from './App';
+
+test('converts length and breadth to acre, cent, square feet, and kuli', () => {
+  expect(calculateLandArea(20, 30)).toEqual({
+    squareFeet: 600,
+    acres: 600 / 43560,
+    cents: 600 / 435.6,
+    kuli: 600 / 144,
+  });
+});
 
 test('renders the Sakthi Property brand', () => {
   render(<App />);
@@ -15,6 +24,65 @@ test('starts with no sample properties, tenants, or rent records', () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'Rent Management' }));
   expect(screen.getByText('No current rent records')).toBeDefined();
+});
+
+test('land calculator is available in its own section', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Land calculator' }));
+
+  fireEvent.change(screen.getByLabelText('Length (feet)'), { target: { value: '20' } });
+  fireEvent.change(screen.getByLabelText('Breadth (feet)'), { target: { value: '30' } });
+
+  expect(screen.getByRole('heading', { name: 'Land area calculator' })).toBeDefined();
+  expect(screen.getByText('600')).toBeDefined();
+});
+
+test('Add Property shows land dimensions without embedding the calculator', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Properties' }));
+  fireEvent.click(screen.getAllByRole('button', { name: 'Add property' })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'Land / Site' }));
+
+  expect(screen.getByText('Land dimensions')).toBeDefined();
+  expect(screen.queryByText('Land area calculator')).toBeNull();
+});
+
+test('previous tenants can download an individual PDF with their own details', () => {
+  const previousTenant = {
+    id: 'tenant-previous',
+    propertyId: 'property-previous',
+    fullName: 'Previous Tenant',
+    phone: '555-0142',
+    status: 'Archived',
+    familyCount: 0,
+    familyMembers: [{ relation: 'Spouse', name: 'Family Member', phone: '555-0143' }],
+    rentHistory: [],
+  };
+  const property = { id: 'property-previous', name: 'Prior House', address: '12 Main Road', ownerName: 'Property Owner' };
+  const popup = { opener: null, document: { write: vi.fn(), close: vi.fn() } };
+  const openWindow = vi.spyOn(window, 'open').mockReturnValue(popup);
+
+  render(<TenantsPage
+    tenants={[previousTenant]}
+    properties={[property]}
+    onAdd={() => {}}
+    onUpdate={() => {}}
+    onArchive={() => {}}
+    onRestore={() => {}}
+    pushToast={() => {}}
+    sendMessage={() => {}}
+  />);
+
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Show previous tenants' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Download Previous Tenant details PDF' }));
+
+  const report = popup.document.write.mock.calls[0][0];
+  expect(report).toContain('Previous Tenant');
+  expect(report).toContain('555-0142');
+  expect(report).toContain('Prior House');
+  expect(report).toContain('Family Member');
+  expect(report).toContain('<strong>1</strong>');
+  openWindow.mockRestore();
 });
 
 test('dashboard rent totals exclude records from other years', () => {

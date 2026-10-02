@@ -76,6 +76,22 @@ const formatDate = (d) => {
   if (isNaN(dt.getTime())) return d;
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 };
+const formatDateTime = (d) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+export function calculateLandArea(length, breadth) {
+  const squareFeet = Number(length || 0) * Number(breadth || 0);
+  return {
+    squareFeet,
+    acres: squareFeet / 43560,
+    cents: squareFeet / 435.6,
+    kuli: squareFeet / 144,
+  };
+}
 function downloadTextFile(filename, text, mime = 'text/plain') {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -198,12 +214,13 @@ function downloadRentHistoryFile(tenant, property, format = 'pdf') {
         <td>${r.month || ''} ${r.year || ''}</td>
         <td>${formatCurrency(r.amount)}</td>
         <td><span class="status ${String(r.status).toLowerCase()}">${r.status || 'Pending'}</span></td>
-        <td>${formatDate(r.paidDate)}</td>
+        <td>${escapeHtml(formatDateTime(r.transactionDate || r.paidDate))}</td>
         <td>${formatDate(r.dueDate)}</td>
       </tr>
     `).join('');
-    const win = window.open('', '_blank', 'noopener,noreferrer,width=980,height=760');
+    const win = window.open('', '_blank', 'width=980,height=760');
     if (!win) return;
+    win.opener = null;
     win.document.write(`<!doctype html><html><head><meta charset="utf-8"/><title>${tenant.fullName} - Rent History</title>
     <style>
       @page{size:A4;margin:16mm}
@@ -213,27 +230,29 @@ function downloadRentHistoryFile(tenant, property, format = 'pdf') {
       h1{font-size:21px;margin:0 0 4px;color:#143c70}.muted{color:#748298;font-size:12px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
       .box{border:1px solid #e1e8ef;border-radius:10px;padding:10px 12px;background:#fbfcfe}.box b{color:#183d6e}.box span{display:block;font-size:11px;color:#7b8798;margin-bottom:3px}.box strong{font-size:13px;color:#1d2d43}
       .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.summary .box{text-align:left}.summary .value{font-size:18px;font-weight:800;color:#123f78}
-      table{width:100%;border-collapse:collapse;font-size:11px}th{background:#f4f7fb;color:#5d6d82;text-align:left;padding:8px;border-bottom:1px solid #dfe7ef}td{padding:8px;border-bottom:1px solid #e8edf3;color:#2b3a4d}
+      table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}th{background:#f4f7fb;color:#5d6d82;text-align:left;padding:8px;border-bottom:1px solid #dfe7ef}td{padding:8px;border-bottom:1px solid #e8edf3;color:#2b3a4d;overflow-wrap:anywhere;vertical-align:top}thead{display:table-header-group}tr{break-inside:avoid}
       .status{font-weight:700}.status.paid{color:#4f8b68}.status.pending{color:#ad7a25}.status.overdue{color:#b76060}
       .footer{margin-top:22px;padding-top:10px;border-top:1px solid #e4e9ef;font-size:10px;color:#8591a1}
       @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
     </style></head><body>
     <div class="header"><div><div class="brand">SAKTHI PROPERTY</div><div class="sub">Property &amp; Facility Management</div></div><div class="muted">Rent History Report</div></div>
-    <h1>${tenant.fullName}</h1><div class="muted">Generated on ${formatDate(new Date())}</div>
+    <h1>${escapeHtml(tenant.fullName)}</h1><div class="muted">Generated on ${formatDateTime(new Date())}</div>
     <div class="meta" style="margin-top:14px">
-      <div class="box"><span>Property</span><strong>${property?.name || '—'}</strong></div>
-      <div class="box"><span>Property type</span><strong>${property?.type || '—'}</strong></div>
-      <div class="box"><span>Tenant phone</span><strong>${tenant.phone || '—'}</strong></div>
+      <div class="box"><span>Property</span><strong>${escapeHtml(property?.name || '—')}</strong></div>
+      <div class="box"><span>Property type</span><strong>${escapeHtml(property?.type || '—')}</strong></div>
+      <div class="box"><span>Tenant phone</span><strong>${escapeHtml(tenant.phone || '—')}</strong></div>
       <div class="box"><span>Tenancy period</span><strong>${formatDate(tenant.dateOfComing)} - ${formatDate(tenant.dateOfLeaving)}</strong></div>
-      <div class="box"><span>Tenant status</span><strong>${tenant.status || 'Active'}</strong></div>
-      <div class="box"><span>Owner</span><strong>${property?.ownerName || '—'}</strong></div>
+      <div class="box"><span>Tenant status</span><strong>${escapeHtml(tenant.status || 'Active')}</strong></div>
+      <div class="box"><span>Owner</span><strong>${escapeHtml(property?.ownerName || '—')}</strong></div>
+      <div class="box"><span>Property tax number</span><strong>${escapeHtml(property?.taxNumber || '—')}</strong></div>
+      <div class="box"><span>Electricity / EB number</span><strong>${escapeHtml(property?.ebNumber || '—')}</strong></div>
     </div>
     <div class="summary">
       <div class="box"><span>Total recorded rent</span><div class="value">${formatCurrency(total)}</div></div>
       <div class="box"><span>Rent paid</span><div class="value">${formatCurrency(paid)}</div></div>
       <div class="box"><span>Outstanding</span><div class="value">${formatCurrency(pending)}</div></div>
     </div>
-    <table><thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Paid on</th><th>Due date</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No rent history recorded.</td></tr>'}</tbody></table>
+    <table><thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Transaction date &amp; time</th><th>Due date</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No rent history recorded.</td></tr>'}</tbody></table>
     <div class="footer">Sakthi Property - Tenant rent history. This report contains the rent records currently stored in the application.</div>
     <script>window.onload=function(){setTimeout(function(){window.print()},250)};<\/script>
     </body></html>`);
@@ -247,14 +266,14 @@ function downloadRentHistoryFile(tenant, property, format = 'pdf') {
     year: r.year || '',
     amount: Number(r.amount || 0),
     status: r.status || 'Pending',
-    paidDate: r.paidDate || '',
+      transactionDate: r.transactionDate || r.paidDate || '',
     dueDate: r.dueDate || '',
   }));
 
   if (format === 'csv') {
-    const headers = ['Month', 'Year', 'Amount', 'Status', 'Paid on', 'Due date'];
+    const headers = ['Month', 'Year', 'Amount', 'Status', 'Transaction date/time', 'Due date'];
     const csv = [headers.join(','), ...rows.map((r) => headers.map((h) => {
-      const key = { Month: 'month', Year: 'year', Amount: 'amount', Status: 'status', 'Paid on': 'paidDate', 'Due date': 'dueDate' }[h];
+      const key = { Month: 'month', Year: 'year', Amount: 'amount', Status: 'status', 'Transaction date/time': 'transactionDate', 'Due date': 'dueDate' }[h];
       const value = r[key] ?? '';
       return `"${String(value).replace(/"/g, '""')}"`;
     }).join(','))].join('\n');
@@ -277,13 +296,52 @@ function downloadRentHistoryFile(tenant, property, format = 'pdf') {
     `Property: ${property?.name || '—'}`,
     '',
     'Month | Year | Amount | Status | Paid on | Due date',
-    ...rows.map((r) => `${r.month} | ${r.year} | ${formatCurrency(r.amount)} | ${r.status} | ${r.paidDate || '—'} | ${r.dueDate || '—'}`),
+    ...rows.map((r) => `${r.month} | ${r.year} | ${formatCurrency(r.amount)} | ${r.status} | ${formatDateTime(r.transactionDate)} | ${r.dueDate || '—'}`),
   ].join('\n');
   downloadTextFile(`${safeName}-rent-history.txt`, text, 'text/plain');
 }
 
 function downloadRentHistoryPDF(tenant, property) {
   downloadRentHistoryFile(tenant, property, 'pdf');
+}
+
+export function downloadTenantDetailsPDF(tenant, property) {
+  if (!tenant) return;
+  const familyRows = (tenant.familyMembers || []).map((member) => `<tr><td>${escapeHtml(member.relation || '—')}</td><td>${escapeHtml(member.name || '—')}</td><td>${escapeHtml(member.phone || '—')}</td></tr>`).join('');
+  const documents = [
+    ['ID proof', tenant.documents?.idProof],
+    ['Address proof', tenant.documents?.addressProof],
+    ['PAN proof', tenant.documents?.panProof],
+    ...(tenant.documentsList || []).map((doc) => [doc.name || 'Additional document', doc]),
+  ].filter(([, value]) => normalizeDocumentValue(value));
+  const documentRows = documents.map(([label, value]) => {
+    const doc = normalizeDocumentValue(value);
+    return `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(doc.name || documentStatus(doc))}</td><td>${escapeHtml(doc.uploadedAt ? formatDateTime(doc.uploadedAt) : '—')}</td><td>${escapeHtml(doc.size ? `${Math.ceil(doc.size / 1024)} KB` : '—')}</td></tr>`;
+  }).join('');
+  const history = Array.isArray(tenant.rentHistory) ? tenant.rentHistory : [];
+  const familyCount = tenant.familyMembers?.length || Number(tenant.familyCount || 0);
+  const transactionRows = history.map((record) => `<tr><td>${escapeHtml(`${record.month || ''} ${record.year || ''}`.trim() || '—')}</td><td>${escapeHtml(formatCurrency(record.amount))}</td><td>${escapeHtml(record.status || 'Pending')}</td><td>${escapeHtml(formatDateTime(record.transactionDate || record.paidDate))}</td><td>${escapeHtml(formatDate(record.dueDate))}</td></tr>`).join('');
+  const win = window.open('', '_blank', 'width=980,height=760');
+  if (!win) return;
+  win.opener = null;
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"/><title>${escapeHtml(tenant.fullName)} - Tenant Details</title>
+  <style>
+    @page{size:A4;margin:14mm}*{box-sizing:border-box}body{font:11px Arial,Helvetica,sans-serif;color:#243247;margin:0;line-height:1.45}.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #d7b653;padding-bottom:12px;margin-bottom:16px}.brand{font-size:20px;font-weight:700;color:#163b70}.muted{color:#718096}h1{font-size:20px;margin:0 0 3px}h2{font-size:13px;color:#163b70;margin:18px 0 8px;border-bottom:1px solid #dfe6ee;padding-bottom:5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px}.item{border:1px solid #dfe6ee;padding:7px;min-width:0;break-inside:avoid}.item span{display:block;color:#718096;font-size:9px}.item strong{display:block;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}th,td{text-align:left;vertical-align:top;padding:6px;border:1px solid #dfe6ee;overflow-wrap:anywhere}th{background:#f2f5f9;color:#41536b}thead{display:table-header-group}tr{break-inside:avoid}.empty{color:#718096;padding:8px 0}.footer{margin-top:18px;border-top:1px solid #dfe6ee;padding-top:8px;color:#718096;font-size:9px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body>
+  <div class="header"><div><div class="brand">SAKTHI PROPERTY</div><div class="muted">Tenant record</div></div><div class="muted">Generated ${escapeHtml(formatDateTime(new Date()))}</div></div>
+  <h1>${escapeHtml(tenant.fullName)}</h1>
+  <h2>Tenant details</h2><div class="grid">
+    ${[['Phone',tenant.phone],['Email',tenant.email],['Date of birth',formatDate(tenant.dob)],['Gender',tenant.gender],['Marital status',tenant.maritalStatus],['Living in house',tenant.livingInHouse],['Education',tenant.education],['Occupation',tenant.occupation],['Religion',tenant.religion],['Status',tenant.status],['Date of coming',formatDate(tenant.dateOfComing)],['Date of leaving',formatDate(tenant.dateOfLeaving)],['Native address',tenant.nativeAddress],['Work address',tenant.workAddress],['Family members',familyCount],['Document type',tenant.rehotraType],['Document number',tenant.rehotraNumber],['Monthly rent',formatCurrency(tenant.rentAmount)],['Advance',formatCurrency(tenant.advanceAmount)],['Maintenance',formatCurrency(tenant.maintenanceFee)],['Brokerage',formatCurrency(tenant.brokerageFee)]].map(([label,value]) => `<div class="item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || '—')}</strong></div>`).join('')}
+  </div>
+  <h2>Property &amp; owner</h2><div class="grid">
+    ${[['Property',property?.name],['Type',property?.type],['Address',property?.address],['City / State / PIN',[property?.city,property?.state,property?.pincode].filter(Boolean).join(', ')],['Owner',property?.ownerName],['Owner phone',property?.ownerPhone],['Property tax number',property?.taxNumber],['Electricity / EB number',property?.ebNumber],['Length × breadth',[property?.length,property?.breadth].filter(Boolean).join(' × ')],['Land area',property?.areaSqft ? `${property.areaSqft} sq ft` : '—']].map(([label,value]) => `<div class="item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || '—')}</strong></div>`).join('')}
+  </div>
+  <h2>Family members</h2>${familyRows ? `<table><thead><tr><th>Relation</th><th>Name</th><th>Phone</th></tr></thead><tbody>${familyRows}</tbody></table>` : '<div class="empty">No family members recorded.</div>'}
+  <h2>Tenant documents</h2>${documentRows ? `<table><thead><tr><th>Document</th><th>File</th><th>Uploaded</th><th>Size</th></tr></thead><tbody>${documentRows}</tbody></table>` : '<div class="empty">No tenant documents recorded.</div>'}
+  <h2>Rent transaction history</h2>${transactionRows ? `<table><thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Transaction date &amp; time</th><th>Due date</th></tr></thead><tbody>${transactionRows}</tbody></table>` : '<div class="empty">No rent transactions recorded.</div>'}
+  <div class="footer">This report contains tenant, property, document and transaction details currently stored in the application.</div>
+  <script>window.onload=function(){setTimeout(function(){window.print()},250)};<\/script></body></html>`);
+  win.document.close();
 }
 
 function DocumentViewer({ documentRecord, title, onClose }) {
@@ -464,6 +522,7 @@ function BarChart({ data, keys, colors, height = 220 }) {
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: 'home' },
   { key: 'properties', label: 'Properties', icon: 'building' },
+  { key: 'land-calculator', label: 'Land calculator', icon: 'land' },
   { key: 'tenants', label: 'Tenants', icon: 'users' },
   { key: 'rent', label: 'Rent', icon: 'cash' },
   { key: 'bills', label: 'Bills', icon: 'bolt' },
@@ -475,7 +534,7 @@ const NAV_ITEMS = [
 
 function Sidebar({ page, setPage, unreadCount, onLogout }) {
   const labels = {
-    dashboard: 'Dashboard', properties: 'Properties', tenants: 'Tenants', rent: 'Rent Management',
+    dashboard: 'Dashboard', properties: 'Properties', 'land-calculator': 'Land calculator', tenants: 'Tenants', rent: 'Rent Management',
     bills: 'Bills', maintenance: 'Maintenance', reports: 'Reports',
     notifications: 'Notifications', settings: 'Settings'
   };
@@ -655,7 +714,7 @@ function DocumentManager({ title, documents, onChange, pushToast, imageOnly = fa
    PROPERTY FORM
    ========================================================= */
 function emptyProperty() {
-  return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, facingRoad: '', landUse: 'Residential', expectedPrice: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, ownerDocumentsList: [], propertyDocumentsList: [], status: 'Available', rentAmount: '', forSale: false, listed: false };
+  return { id: null, mode: 'building', type: 'House', name: '', address: '', state: '', city: '', pincode: '', taxNumber: '', ebNumber: '', length: '', breadth: '', areaSqft: '', lat: '', lng: '', totalFloors: '', floorNumber: '', flatType: '', flatsCount: 1, facingRoad: '', landUse: 'Residential', expectedPrice: '', monthlyMaintenance: '', direction: '', furnished: 'Unfurnished', amenities: [], landmarks: [], additionalDetails: '', ownerName: '', ownerPhone: '', ownerDocuments: { identity: null, ownership: null, addressProof: null }, ownerDocumentsList: [], propertyDocumentsList: [], status: 'Available', rentAmount: '', forSale: false, listed: false };
 }
 
 function PropertyForm({ initial, onSave, onCancel, pushToast }) {
@@ -666,6 +725,7 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
   });
   const [landmarkDraft, setLandmarkDraft] = useState({ name: '', distance: '', type: '' });
   const [amenityDraft, setAmenityDraft] = useState('');
+  const landArea = calculateLandArea(form.length, form.breadth);
 
   function set(field, value) { setForm((f) => ({ ...f, [field]: value })); }
   function toggleAmenity(a) { setForm((f) => ({ ...f, amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a] })); }
@@ -684,7 +744,7 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
   function submit(e) {
     e.preventDefault();
     if (!form.name || !form.address || !form.ownerName || !form.ownerPhone) return;
-    onSave({ ...form, id: form.id || uid(), type: form.mode === 'land' ? 'Land' : form.type });
+    onSave({ ...form, areaSqft: form.mode === 'land' ? landArea.squareFeet : form.areaSqft, id: form.id || uid(), type: form.mode === 'land' ? 'Land' : form.type });
   }
 
   return (
@@ -720,6 +780,24 @@ function PropertyForm({ initial, onSave, onCancel, pushToast }) {
           <label>Pin code<input value={form.pincode} onChange={(e) => set('pincode', e.target.value)} /></label>
         </div>
       </div>
+
+      <div className="form-section">
+        <h4>Property identifiers</h4>
+        <div className="form-grid">
+          <label>Property tax number<input value={form.taxNumber} onChange={(e) => set('taxNumber', e.target.value)} /></label>
+          <label>Electricity / EB number<input value={form.ebNumber} onChange={(e) => set('ebNumber', e.target.value)} /></label>
+        </div>
+      </div>
+
+      {form.mode === 'land' && (
+        <div className="form-section">
+          <h4>Land dimensions</h4>
+          <div className="form-grid">
+            <label>Length (feet)<input type="number" min="0" step="any" value={form.length} onChange={(e) => set('length', e.target.value)} /></label>
+            <label>Breadth (feet)<input type="number" min="0" step="any" value={form.breadth} onChange={(e) => set('breadth', e.target.value)} /></label>
+          </div>
+        </div>
+      )}
 
       {form.mode === 'building' && (
         <div className="form-section">
@@ -1066,6 +1144,37 @@ function BackButton({ onBack }) {
   );
 }
 
+function LandCalculatorPage({ onBack }) {
+  const [length, setLength] = useState('');
+  const [breadth, setBreadth] = useState('');
+  const landArea = calculateLandArea(length, breadth);
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div className="page-header-left">
+          <BackButton onBack={onBack} />
+          <h2>Land area calculator</h2>
+        </div>
+      </div>
+      <section className="card" aria-labelledby="land-calculator-heading">
+        <div className="card-head"><h3 id="land-calculator-heading">Dimensions</h3></div>
+        <div className="form-grid">
+          <label>Length (feet)<input type="number" min="0" step="any" value={length} onChange={(event) => setLength(event.target.value)} /></label>
+          <label>Breadth (feet)<input type="number" min="0" step="any" value={breadth} onChange={(event) => setBreadth(event.target.value)} /></label>
+        </div>
+        <div className="area-conversion-results" aria-live="polite">
+          <span><b>{landArea.squareFeet.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</b> sq ft</span>
+          <span><b>{landArea.acres.toLocaleString('en-IN', { maximumFractionDigits: 6 })}</b> acres</span>
+          <span><b>{landArea.cents.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</b> cents</span>
+          <span><b>{landArea.kuli.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</b> kuli</span>
+        </div>
+        <p className="muted small">Area is calculated as length × breadth. 1 kuli = 144 sq ft.</p>
+      </section>
+    </div>
+  );
+}
+
 /* =========================================================
    PROPERTIES PAGE
    ========================================================= */
@@ -1153,7 +1262,7 @@ function PropertiesPage({ properties, onAdd, onUpdate, onDelete, onToggleSale, p
 /* =========================================================
    TENANTS PAGE
    ========================================================= */
-function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestore, pushToast, sendMessage, onBack }) {
+export function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestore, pushToast, sendMessage, onBack }) {
   const [buildingFilter, setBuildingFilter] = useState('All');
   const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
@@ -1206,6 +1315,7 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
                 <td>{formatDate(t.dateOfComing)}</td>
                 <td><Badge text={t.status} tone={t.status === 'Active' ? 'success' : 'default'} /></td>
                 <td className="row-actions">
+                  <button className="icon-btn" title="Download tenant details PDF" aria-label={`Download ${t.fullName} details PDF`} onClick={() => downloadTenantDetailsPDF(t, properties.find((p) => p.id === t.propertyId))}><Icon name="download" size={15} /></button>
                   <button className="icon-btn" title="View details" onClick={() => setDetailOf(t)}><Icon name="eye" size={15} /></button>
                   <button className="icon-btn" title="Rent history" onClick={() => setHistoryOf(t)}><Icon name="clock" size={15} /></button>
                   <button className="icon-btn" title="Edit" onClick={() => { setEditing(t); setModalOpen(true); }}><Icon name="edit" size={15} /></button>
@@ -1234,8 +1344,8 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
         return (
           <Modal title={`${detailOf.fullName} — details`} onClose={() => setDetailOf(null)} wide>
             <div className="tenant-detail-grid">
-              <div className="detail-card"><h4>Tenant details</h4><p><b>Name:</b> {detailOf.fullName}</p><p><b>Phone:</b> {detailOf.phone || '—'}</p><p><b>Email:</b> {detailOf.email || '—'}</p><p><b>Status:</b> {detailOf.status}</p><p><b>Date of coming:</b> {formatDate(detailOf.dateOfComing)}</p><p><b>Date of leaving:</b> {formatDate(detailOf.dateOfLeaving)}</p></div>
-              <div className="detail-card"><h4>Property & owner</h4><p><b>Property:</b> {property?.name || '—'}</p><p><b>Address:</b> {property?.address || '—'}</p><p><b>Owner:</b> {property?.ownerName || '—'}</p><p><b>Owner phone:</b> {property?.ownerPhone || '—'}</p></div>
+                  <div className="detail-card"><h4>Tenant details</h4><p><b>Name:</b> {detailOf.fullName}</p><p><b>Phone:</b> {detailOf.phone || '—'}</p><p><b>Email:</b> {detailOf.email || '—'}</p><p><b>Status:</b> {detailOf.status}</p><p><b>Date of coming:</b> {formatDate(detailOf.dateOfComing)}</p><p><b>Date of leaving:</b> {formatDate(detailOf.dateOfLeaving)}</p><p><b>Native address:</b> {detailOf.nativeAddress || '—'}</p><p><b>Work address:</b> {detailOf.workAddress || '—'}</p><p><b>Family members:</b> {detailOf.familyCount || detailOf.familyMembers?.length || 0}</p></div>
+                  <div className="detail-card"><h4>Property & owner</h4><p><b>Property:</b> {property?.name || '—'}</p><p><b>Address:</b> {property?.address || '—'}</p><p><b>Owner:</b> {property?.ownerName || '—'}</p><p><b>Owner phone:</b> {property?.ownerPhone || '—'}</p><p><b>Tax number:</b> {property?.taxNumber || '—'}</p><p><b>EB number:</b> {property?.ebNumber || '—'}</p></div>
               <div className="detail-card"><h4>Financial details</h4><p><b>Rent:</b> {formatCurrency(detailOf.rentAmount)}</p><p><b>Advance:</b> {formatCurrency(detailOf.advanceAmount)}</p><p><b>Maintenance:</b> {formatCurrency(detailOf.maintenanceFee)}</p><p><b>Brokerage:</b> {formatCurrency(detailOf.brokerageFee)}</p></div>
               <div className="detail-card"><h4>Tenant documents</h4>
                 {[['idProof','ID proof'],['addressProof','Address proof'],['panProof','PAN proof']].map(([key,label]) => { const doc=normalizeDocumentValue(docs[key]); return <div className="doc-view-row" key={key}><span>{label} — {documentStatus(doc)}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${detailOf.fullName} — ${label}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>; })}
@@ -1253,10 +1363,10 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
                 {(property?.propertyDocumentsList || []).length === 0 ? <p className="muted">No additional property documents uploaded.</p> : property.propertyDocumentsList.map((doc) => <div className="doc-view-row" key={doc.id || doc.name}><span>{doc.name}</span><span className="doc-actions">{viewableDocument(doc) && <button className="btn btn-xs btn-outline" onClick={() => setViewDocument({doc,title:`${property.name} — ${doc.name}`})}>View</button>} {doc?.dataUrl && <button className="btn btn-xs btn-outline" onClick={() => downloadDocument(doc)}>Download</button>}</span></div>)}
               </div>
               <div className="detail-card"><h4>Previous tenants for this property</h4>
-                {previousTenants.length === 0 ? <p className="muted">No previous tenant records for this property.</p> : previousTenants.map((prev) => <div className="previous-tenant-row" key={prev.id}><span><b>{prev.fullName}</b><small>{formatDate(prev.dateOfComing)} → {formatDate(prev.dateOfLeaving)}</small></span><button className="btn btn-xs btn-outline" onClick={() => setDetailOf(prev)}>View</button></div>)}
+                {previousTenants.length === 0 ? <p className="muted">No previous tenant records for this property.</p> : previousTenants.map((prev) => <div className="previous-tenant-row" key={prev.id}><span><b>{prev.fullName}</b><small>{formatDate(prev.dateOfComing)} → {formatDate(prev.dateOfLeaving)}</small></span><div className="row-actions"><button className="btn btn-xs btn-outline" onClick={() => setDetailOf(prev)}>View</button><button className="btn btn-xs btn-outline" aria-label={`Download ${prev.fullName} details PDF`} onClick={() => downloadTenantDetailsPDF(prev, property)}><Icon name="download" size={13}/> PDF</button></div></div>)}
               </div>
             </div>
-            <div className="modal-footer-inline"><button className="btn btn-primary" onClick={() => downloadTextFile(`${detailOf.fullName.replace(/\s+/g,'-')}-details.txt`, recordAsDownloadText(`${detailOf.fullName} — tenant details`, detailOf))}><Icon name="download" size={15}/> Download tenant details</button></div>
+            <div className="modal-footer-inline"><button className="btn btn-primary" onClick={() => downloadTenantDetailsPDF(detailOf, property)}><Icon name="download" size={15}/> Download tenant details PDF</button></div>
             {viewDocument && <DocumentViewer documentRecord={viewDocument.doc} title={viewDocument.title} onClose={() => setViewDocument(null)} />}
           </Modal>
         );
@@ -1274,12 +1384,12 @@ function TenantsPage({ tenants, properties, onAdd, onUpdate, onArchive, onRestor
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Paid on</th></tr></thead>
+              <thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Transaction date &amp; time</th></tr></thead>
               <tbody>
                 {(historyOf.rentHistory || []).map((r, i) => (
                   <tr key={i}><td>{r.month} {r.year}</td><td>{formatCurrency(r.amount)}</td>
                     <td><Badge text={r.status} tone={r.status === 'Paid' ? 'success' : r.status === 'Overdue' ? 'danger' : 'warning'} /></td>
-                    <td>{r.paidDate ? formatDate(r.paidDate) : '—'}</td></tr>
+                    <td>{formatDateTime(r.transactionDate || r.paidDate)}</td></tr>
                 ))}
                 {(!historyOf.rentHistory || historyOf.rentHistory.length === 0) && <tr><td colSpan="4"><EmptyState text="No rent history yet" /></td></tr>}
               </tbody>
@@ -1388,14 +1498,14 @@ function RentPage({ tenants, properties, onMarkPaid, sendMessage, pushToast, onB
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Paid on</th></tr></thead>
+              <thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Transaction date &amp; time</th></tr></thead>
               <tbody>
                 {(historyOf.rentHistory || []).map((record, index) => (
                   <tr key={`${record.year}-${record.month}-${index}`}>
                     <td>{record.month} {record.year}</td>
                     <td>{formatCurrency(record.amount)}</td>
                     <td><Badge text={record.status} tone={record.status === 'Paid' ? 'success' : record.status === 'Overdue' ? 'danger' : 'warning'} /></td>
-                    <td>{record.paidDate ? formatDate(record.paidDate) : '—'}</td>
+                    <td>{formatDateTime(record.transactionDate || record.paidDate)}</td>
                   </tr>
                 ))}
                 {(!historyOf.rentHistory || historyOf.rentHistory.length === 0) && <tr><td colSpan="4"><EmptyState text="No rent history yet" /></td></tr>}
@@ -2130,9 +2240,11 @@ export default function App() {
       if (t.id !== tenantId) return t;
       const history = Array.isArray(t.rentHistory) ? [...t.rentHistory] : [];
       if (idx === -1) {
-        history.unshift({ month: paidMonth, year: source.year || new Date().getFullYear(), amount: paidAmount, status: 'Paid', paidDate: new Date().toISOString(), dueDate: null });
+        const transactionDate = new Date().toISOString();
+        history.unshift({ month: paidMonth, year: source.year || new Date().getFullYear(), amount: paidAmount, status: 'Paid', paidDate: transactionDate, transactionDate, dueDate: null });
       } else if (history[idx]) {
-        history[idx] = { ...history[idx], status: 'Paid', paidDate: new Date().toISOString() };
+        const transactionDate = new Date().toISOString();
+        history[idx] = { ...history[idx], status: 'Paid', paidDate: transactionDate, transactionDate };
       }
       return { ...t, rentHistory: history };
     }));
@@ -2177,6 +2289,7 @@ export default function App() {
     switch (page) {
       case 'dashboard': return <DashboardPage properties={properties} tenants={tenants} bills={bills} notifications={notifications} setPage={setPage} />;
       case 'properties': return <PropertiesPage properties={properties} onAdd={addProperty} onUpdate={updateProperty} onDelete={deleteProperty} onToggleSale={toggleSale} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
+      case 'land-calculator': return <LandCalculatorPage onBack={() => setPage('dashboard')} />;
       case 'tenants': return <TenantsPage tenants={tenants} properties={properties} onAdd={addTenant} onUpdate={updateTenant} onArchive={archiveTenant} onRestore={restoreTenant} pushToast={pushToast} sendMessage={sendMessage} onBack={() => setPage('dashboard')} />;
       case 'rent': return <RentPage tenants={tenants} properties={properties} onMarkPaid={markRentPaid} sendMessage={sendMessage} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
       case 'bills': return <BillsPage bills={bills} properties={properties} onAdd={addBill} onMarkPaid={markBillPaid} pushToast={pushToast} onBack={() => setPage('dashboard')} />;
