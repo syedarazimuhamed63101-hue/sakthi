@@ -1740,9 +1740,6 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
   const [managerForm, setManagerForm] = useState({ name: '', phone: '', role: 'Manager' });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [profile, setProfile] = useState(() => ({ name: '', email: '', phone: '', bankName: '', accountNumber: '', ifsc: '', profilePhoto: null, ...(adminProfile || {}) }));
-  const [lang, setLang] = useState('English');
-  const [currency, setCurrency] = useState('INR (₹)');
-
   const items = [
     { key: 'profile', icon: 'users', label: 'Profile & bank details' },
     { key: 'buildings', icon: 'building', label: 'Add buildings / flats' },
@@ -1750,7 +1747,6 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
     { key: 'tolet', icon: 'mapPin', label: 'Online to-let listings' },
     { key: 'managers', icon: 'users', label: 'Add / manage managers' },
     { key: 'sale', icon: 'cash', label: 'Sale online flat / property' },
-    { key: 'language', icon: 'settings', label: 'Language & internationalization' },
     { key: 'notif', icon: 'bell', label: 'Notification settings' },
     { key: 'delete', icon: 'trash', label: 'Delete account' },
   ];
@@ -1898,21 +1894,6 @@ function SettingsPage({ managers, onAddManager, onRemoveManager, properties, onT
               </table>
             </div>
           )}
-        </div>
-      );
-    }
-
-    if (sectionKey === 'language') {
-      return (
-        <div className="settings-panel settings-panel-inline">
-          <h4>Language &amp; internationalization</h4>
-          <div className="form-grid">
-            <label>Language<select value={lang} onChange={(e) => setLang(e.target.value)}><option>English</option><option>Tamil</option><option>Hindi</option><option>Telugu</option></select></label>
-            <label>Currency<select value={currency} onChange={(e) => setCurrency(e.target.value)}><option>INR (₹)</option><option>USD ($)</option><option>EUR (€)</option></select></label>
-          </div>
-          <div className="settings-action-row">
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => pushToast(`Language: ${lang} • Currency: ${currency}`)}>Apply</button>
-          </div>
         </div>
       );
     }
