@@ -1262,6 +1262,9 @@ function StandardCalculatorPanel() {
 
   return (
     <section className="calculator-panel" aria-label="Standard calculator">
+      <div className="calculator-expression" aria-label="Pending calculation">
+        {pendingOperation && storedValue !== null ? `${storedValue} ${pendingOperation}` : ''}
+      </div>
       <output className="calculator-display" aria-label="Calculator display" aria-live="polite">{display}</output>
       <div className="calculator-keys">
         {keys.map((key) => (

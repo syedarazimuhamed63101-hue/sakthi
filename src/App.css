@@ -7368,6 +7368,7 @@ table td{font-size:.88rem;line-height:1.45;}
 .calculator-mode-switch{display:inline-flex;align-self:flex-start;gap:3px;padding:4px;border:1px solid #dce7e1;border-radius:9px;background:#eaf1ed}
 .calculator-mode-switch button{min-height:36px;padding:7px 14px;border:0;border-radius:6px;background:transparent;color:#53645b;font-size:.84rem;font-weight:600}
 .calculator-mode-switch button.active{background:#fff;color:#315d45;box-shadow:0 1px 4px rgba(31,58,49,.12)}
+.calculator-expression{min-height:1.25rem;padding:2px 10px 0;color:#b7c9bd;text-align:right;font-size:.9rem;font-variant-numeric:tabular-nums}
 .calculator-display{display:flex;align-items:center;justify-content:flex-end;min-height:82px;padding:8px 10px 18px;color:#f2f7f3;font-size:2.4rem;font-variant-numeric:tabular-nums;overflow:hidden;overflow-wrap:anywhere}
 .calculator-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
 .calculator-key{aspect-ratio:1.2;border:0;border-radius:9px;background:#f3f6f2;color:#25342e;font-size:1.1rem;font-weight:650;transition:filter .15s ease,transform .15s ease}

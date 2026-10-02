@@ -46,12 +46,13 @@ test('standard calculator performs basic arithmetic', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Calculator' }));
 
   fireEvent.click(screen.getByRole('button', { name: '1' }));
-  fireEvent.click(screen.getByRole('button', { name: '2' }));
   fireEvent.click(screen.getByRole('button', { name: '+' }));
-  fireEvent.click(screen.getByRole('button', { name: '7' }));
+  expect(screen.getByLabelText('Pending calculation').textContent).toBe('1 +');
+
+  fireEvent.click(screen.getByRole('button', { name: '2' }));
   fireEvent.click(screen.getByRole('button', { name: '=' }));
 
-  expect(screen.getByLabelText('Calculator display').textContent).toBe('19');
+  expect(screen.getByLabelText('Calculator display').textContent).toBe('3');
 });
 
 test('Add Property shows land dimensions without embedding the calculator', () => {
